@@ -896,7 +896,7 @@ const SPECIES_2014=[
  {n:"人類（變體）",size:"中型",speed:30,ab:{},traits:["任選兩項不同屬性各 +1","任選一項技能熟練","任選一項專長","額外語言"],desc:"PHB 2014 選用規則的人類變體。",ch:[{k:"flex1",t:"ability",label:"任選屬性 +1（之一）"},{k:"flex2",t:"ability",label:"任選屬性 +1（之二）"},{k:"hSkill",t:"skill",label:"任選技能熟練"},{k:"hFeat",t:"ofeat",label:"任選專長"}]},
  {n:"精靈",size:"中型",speed:30,ab:{dex:2},traits:["黑暗視覺 60 尺","敏銳感官","精類先祖","出神"],desc:"優雅長壽、與魔法相伴的族群。",ch:[{k:"subrace",t:"subrace",label:"精靈亞種",opts:["高等精靈","木精靈","卓爾"]},{k:"highElfCantrip",t:"spell",label:"高等精靈戲法",code:"W",level:0,when:{subrace:"高等精靈"}}]},
  {n:"矮人",size:"中型",speed:25,ab:{con:2},traits:["黑暗視覺 60 尺","矮人韌性","石工知識","戰鬥訓練"],desc:"堅忍、重視氏族與工藝的族群。",ch:[{k:"subrace",t:"subrace",label:"矮人亞種",opts:["丘陵矮人","山地矮人"]}]},
- {n:"半身人",size:"小型",speed:25,ab:{dex:2},traits:["幸運","勇敢","靈活"],desc:"身形嬌小、樂天而幸運的族群。",ch:[{k:"subrace",t:"subrace",label:"半身人亞種",opts:["輕足半身人","壯心半身人"]}]},
+ {n:"半身人",size:"小型",speed:25,ab:{dex:2},traits:["幸運","勇敢","半身人靈巧"],desc:"身形嬌小、樂天而幸運的族群。",ch:[{k:"subrace",t:"subrace",label:"半身人亞種",opts:["輕足半身人","壯心半身人"]}]},
  {n:"龍裔",size:"中型",speed:30,ab:{str:2,cha:1},traits:["龍族血統","吐息武器","傷害抗性"],desc:"承襲巨龍血脈與榮耀的族群。",ch:[{k:"dragonAnc14",t:"raw",label:"龍族先祖",opts:["黑龍（酸蝕／直線）","藍龍（閃電／直線）","黃銅龍（火焰／直線）","青銅龍（閃電／直線）","赤銅龍（酸蝕／直線）","金龍（火焰／錐形）","綠龍（毒素／錐形）","紅龍（火焰／錐形）","銀龍（寒冷／錐形）","白龍（寒冷／錐形）"]}]},
  {n:"侏儒",size:"小型",speed:25,ab:{int:2},traits:["黑暗視覺 60 尺","侏儒狡黠"],desc:"充滿好奇心與巧思的小型族群。",ch:[{k:"subrace",t:"subrace",label:"侏儒亞種",opts:["森林侏儒","岩地侏儒"]}]},
  {n:"半精靈",size:"中型",speed:30,ab:{cha:2},flex:2,traits:["黑暗視覺 60 尺","精類先祖","技能多才"],desc:"兼具人類適應力與精靈傳承。",ch:[{k:"flex1",t:"ability",label:"任選屬性 +1（之一）"},{k:"flex2",t:"ability",label:"任選屬性 +1（之二）"},{k:"hSkill",t:"skill",label:"技能多才（之一）"},{k:"eSkill",t:"skill",label:"技能多才（之二）"}]},
@@ -1739,6 +1739,14 @@ featExtraUI14=function(v){
  const options=(role,label,arr)=>`<label style="display:inline-block;margin:6px 8px 0 0">${label} <select data-role="${role}"><option value="">— 選擇 —</option>${arr.map(x=>`<option value="${x}"${v[role]===x?" selected":""}>${x}</option>`).join("")}</select></label>`;
  h+=options("featClass","法術列表",Object.keys(FEAT_CASTER_2014));const code=FEAT_CASTER_2014[v.featClass];
  if(code)h+=options("featCantrip1","攻擊戲法",SPELL14_ATTACK_CANTRIPS.filter(n=>spellsFor(code,0).some(x=>x.n===n)));return h;
+};
+const RACE_TRAIT_DESC14={
+ "幸運":"當你的攻擊檢定、屬性檢定或豁免檢定擲出 d20 自然 1 時，可以重擲該骰，但必須使用新的結果。",
+ "勇敢":"你對抗恐慌狀態的豁免檢定具有優勢。",
+ "半身人靈巧":"你可以穿過體型比你大至少一級之生物所占據的空間。",
+ "靈活":"你可以穿過體型比你大至少一級之生物所占據的空間。",
+ "天生善匿":"你可以躲在體型比你大至少一級的生物身後，嘗試進行躲藏。",
+ "壯心韌性":"你對毒素的豁免檢定具有優勢，並且對毒素傷害具有抗性。"
 };
 const featExtraReady14Core=featExtraReady14;
 featExtraReady14=function(v){return featExtraReady14Core(v)&&(v?.feat!=="法術射手"||!!v.featClass&&!!v.featCantrip1)};
@@ -3332,7 +3340,9 @@ function renderOrigin(){
  const sd=$("spDetail");
  if(S.sp){
    sd.hidden=false;
-   let sh=`${S.ruleset==="2014"?`<div class="row"><span class="label">種族屬性</span><b>${Object.entries(S.sp.ab||{}).map(([k,v])=>`${ABN[k]} +${v}`).join("、")||"依亞種／選項"}</b></div>`:""}<div class="row"><span class="label">特性</span></div><ul style="margin-left:18px">${S.sp.traits.map(t=>`<li>${t}</li>`).join("")}</ul>`;
+   const traitLine=t=>`<li><b>${t}</b>${S.ruleset==="2014"&&RACE_TRAIT_DESC14[t]?`：${RACE_TRAIT_DESC14[t]}`:""}</li>`;
+   const sr=S.ruleset==="2014"?SUBRACE14[S.spChoices.subrace]:null;
+   let sh=`${S.ruleset==="2014"?`<div class="row"><span class="label">種族屬性</span><b>${Object.entries(S.sp.ab||{}).map(([k,v])=>`${ABN[k]} +${v}`).join("、")||"依亞種／選項"}</b></div>`:""}<div class="row"><span class="label">特性</span></div><ul style="margin-left:18px">${S.sp.traits.map(traitLine).join("")}${sr?sr.traits.map(traitLine).join(""):""}</ul>`;
    if(S.sp.ch&&S.sp.ch.length){
      sh+=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
        <div style="font-family:var(--serif);color:var(--gold);font-size:15px;margin-bottom:8px">${S.sp.n}需要做出的選擇</div>`;
@@ -5224,7 +5234,9 @@ function renderFinal(){
  const sn=saveNote();
  if(sn.length)html+=`<div class="fs-sec"><div class="st">豁免加成來源</div><ul>${sn.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
  if(S.sp){
-   html+=`<div class="fs-sec"><div class="st">物種特性:${S.sp.n}</div><ul>${S.sp.traits.map(t=>`<li>${t}</li>`).join("")}</ul>`;
+   const traitLine=t=>`<li><b>${t}</b>${S.ruleset==="2014"&&RACE_TRAIT_DESC14[t]?`：${RACE_TRAIT_DESC14[t]}`:""}</li>`;
+   const sr=S.ruleset==="2014"?SUBRACE14[S.spChoices.subrace]:null;
+   html+=`<div class="fs-sec"><div class="st">${S.ruleset==="2014"?"種族":"物種"}特性:${S.sp.n}</div><ul>${S.sp.traits.map(traitLine).join("")}${sr?sr.traits.map(traitLine).join(""):""}</ul>`;
    const picks=(S.sp.ch||[]).filter(c=>S.spChoices[c.k]);
    if(picks.length)html+=`<ul style="margin-top:5px">${picks.map(c=>{
      const v=S.spChoices[c.k];
@@ -5431,7 +5443,7 @@ function update(){
  if(S.spChoices.hFeat)items.push(`額外起源專長:<b>${S.spChoices.hFeat}</b><br><span class="dim" style="font-size:11.5px">${featDesc(S.spChoices.hFeat)}</span>`);
  if(S.ruleset==="2024"&&S.bg)items.push(`起源專長:<b>${S.bg.feat}</b><br><span class="dim" style="font-size:11.5px">${featDesc(S.bg.feat)}</span>`);
  if(S.ruleset==="2014"&&S.bg)items.push(`背景特性:<b>${S.bg.feature}</b>`);
- if(S.sp)S.sp.traits.forEach(t=>items.push(t));
+ if(S.sp){const addTrait=t=>items.push(`<b>${t}</b>${S.ruleset==="2014"&&RACE_TRAIT_DESC14[t]?`：${RACE_TRAIT_DESC14[t]}`:""}`);S.sp.traits.forEach(addTrait);const sr=S.ruleset==="2014"?SUBRACE14[S.spChoices.subrace]:null;if(sr)sr.traits.forEach(addTrait)}
  tr.innerHTML=items.length?items.map(t=>`<li>${t}</li>`).join(""):`<li class="dim">—</li>`;
 
  const ciS=castInfo();
