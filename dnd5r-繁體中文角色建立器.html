@@ -118,6 +118,7 @@ h3.group-title::before{content:"¶ ";color:var(--gold);opacity:.6}
 .roll-area .dice{margin-left:16px;font-family:var(--serif);font-size:16px;color:var(--lapis);letter-spacing:.2em}
 
 .bonus-mode{display:flex;margin:10px 0 16px;flex-wrap:wrap;border:1px solid var(--line-soft);width:fit-content}
+#bonusMode[hidden]{display:none!important}
 .bonus-mode button{background:var(--panel);border:none;border-right:1px solid var(--line-soft);color:var(--muted);padding:7px 18px;font-size:13px}
 .bonus-mode button:last-child{border-right:none}
 .bonus-mode button.active{background:var(--gold);color:#f3ecd8}
@@ -245,7 +246,7 @@ textarea.fs-ta.tall{min-height:156px}
 .print-template-title{display:none}
 
 header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;letter-spacing:.04em}
-/* ══ 法錶速查 ══ */
+/* ══ 法表速查 ══ */
 .sref{cursor:help;border-bottom:1px dotted var(--gold-dim)}
 .sref:hover{color:var(--gold)}
 #spellTip{display:none;position:fixed;z-index:90;width:340px;max-width:80vw;background:#2a2118;color:#ece3c9;border:1px solid var(--leaf);padding:11px 14px;font-size:12.5px;line-height:1.65;font-family:var(--sans);pointer-events:none;box-shadow:3px 3px 0 rgba(42,33,24,.22)}
@@ -707,13 +708,13 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
       <button data-r="boon">史詩恩賜</button>
     </div>
     <div id="refBody"></div>
-    <div class="step-nav"><button class="btn-back" data-go="7">← 返回角色卡</button><button data-go="9">法錶速查 →</button></div>
+    <div class="step-nav"><button class="btn-back" data-go="7">← 返回角色卡</button><button data-go="9">法表速查 →</button></div>
   </section>
 
-  <!-- 第 10 步:法錶速查 -->
+  <!-- 第 10 步:法表速查 -->
   <section class="step-panel" data-step="9">
-    <h2 class="step-title">法錶速查</h2>
-    <p class="step-hint">2024 玩家手冊全部法術的詳細條目:學派、施法時間、射程、成分、持續時間與效果說明。在法術頁或角色卡上把滑鼠懸停在任何法術名上,即可直接檢視該法術的完整詳情;本頁則可用於按環階、職業與關鍵詞瀏覽整張法表。</p>
+    <h2 class="step-title">法表速查</h2>
+    <p class="step-hint" id="spellRefHint">2024 玩家手冊全部法術的詳細條目:學派、施法時間、射程、成分、持續時間與效果說明。在法術頁或角色卡上把滑鼠懸停在任何法術名上,即可直接檢視該法術的完整詳情;本頁則可用於按環階、職業與關鍵詞瀏覽整張法表。</p>
     <div class="gear-ctl" style="margin-bottom:14px">
       <input type="text" id="srefQ" placeholder="搜尋法術名稱或效果…" style="flex:1 1 220px;min-width:0">
       <select id="srefLv"><option value="all">全部環階</option><option value="0">戲法</option><option value="1">1 環</option><option value="2">2 環</option><option value="3">3 環</option><option value="4">4 環</option><option value="5">5 環</option><option value="6">6 環</option><option value="7">7 環</option><option value="8">8 環</option><option value="9">9 環</option></select>
@@ -1444,6 +1445,13 @@ const SUBD={
 "幻實莫辨":"專注於幻術法術時,可使幻象中的一個物件在 1 分鐘內變為真實。"
 };
 const ALLDESC=Object.assign({},FDESC,SUBD);
+Object.assign(ALLDESC,{
+ "狂野魔法浪湧":"當你施放一環或更高環階的術士法術後，DM 可要求你擲 d20；擲出 1 時，立刻在狂野魔法浪湧表擲骰並套用結果。",
+ "混亂之潮":"你可以在一次攻擊檢定、屬性檢定或豁免檢定獲得優勢；使用後，必須完成長休才能再次使用。完成長休前，DM 可在你施放一環或更高環階術士法術後令你擲狂野魔法浪湧表，隨後你恢復此能力。",
+ "竄改運氣":"當你看見的生物進行攻擊檢定、屬性檢定或豁免檢定時，可用反應消耗 2 魔力點，擲 1d4 並加上或減去該次檢定。",
+ "控制混沌":"當你擲狂野魔法浪湧表時可擲兩次，選擇其中一個結果。",
+ "法術轟擊":"當你擲出法術傷害骰的最大值時，可再擲一次該骰並將結果加入傷害；每次施法只能使用一次。"
+});
 /* ============ 通用專長(4 級起可選) ============ */
 const GFEATS_2024=[
  {n:"屬性值提升",p:"—",d:"一項屬性值+2,或兩項屬性值各+1(上限 20)。可重複選取。"},
@@ -3080,7 +3088,12 @@ function syncRulesetUI(){
  document.querySelector('[data-step="2"] .step-hint').textContent=is14
    ?"使用標準陣列、27 點購點、投骰或自訂數值，再套用種族提供的屬性加值。"
    :"使用標準陣列、27 點購點、投骰或自訂數值，再套用背景提供的屬性值提升。";
- $("rulesetStatus").textContent=is14?"2014：PHB 起源與屬性規則已接入；職業進程、專長與法術仍在逐項核對。":"2024：現有完整規則資料。";
+ $("rulesetStatus").textContent=is14?"2014：PHB 種族、職業進程、專長與法術表。":"2024：修訂版角色建立規則與法術表。";
+ const spellHint=$("spellRefHint");
+ if(spellHint)spellHint.textContent=is14
+   ?"2014《玩家手冊》法術表：依 2014 法術列表、職業、環階、施法時間、射程、成分與持續時間瀏覽。此頁與法術選擇頁都會使用 2014 資料，不混用 2024 修訂法術。"
+   :"2024《玩家手冊》法術表：依 2024 修訂法術列表、職業、環階、施法時間、射程、成分與持續時間瀏覽。";
+ if($("bonusMode"))$("bonusMode").hidden=is14;
  document.querySelectorAll("[data-ruleset]").forEach(b=>b.classList.toggle("selected",b.dataset.ruleset===S.ruleset));
 }
 function chooseRuleset(next){
@@ -3323,7 +3336,9 @@ function renderOrigin(){
    if(S.sp.ch&&S.sp.ch.length){
      sh+=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
        <div style="font-family:var(--serif);color:var(--gold);font-size:15px;margin-bottom:8px">${S.sp.n}需要做出的選擇</div>`;
-    S.sp.ch.forEach(c=>{
+    const deferred=S.sp.ch.filter(c=>deferredSpeciesChoice14(c));
+    if(deferred.length)sh+=`<div class="pb-info" style="margin-bottom:8px">2014 種族提供的任選屬性加值會在「屬性」頁決定；技能熟練會在「技能」頁決定。</div>`;
+    S.sp.ch.filter(c=>!deferredSpeciesChoice14(c)).forEach(c=>{
       if(c.when&&!Object.entries(c.when).every(([k,v])=>S.spChoices[k]===v)){delete S.spChoices[c.k];return}
        const locked=c.minLv&&S.level<c.minLv;
        const cur=S.spChoices[c.k]||"";
@@ -3427,10 +3442,20 @@ function renderAbilities(){
    const bonus=bm[a.k];
    const extra=asiAbilityMap()[a.k]+featAbilityMap()[a.k]+boonAbilityMap()[a.k];
    cell.innerHTML=`<div class="aname">${a.n}</div>${ctrl}
-     <div class="bonus-note">${[bonus?`背景 +${bonus}`:"",extra?`升級 +${extra}`:""].filter(Boolean).join(" · ")}</div>
+     <div class="bonus-note">${[bonus?`${S.ruleset==="2014"?"種族":"背景"} +${bonus}`:"",extra?`升級 +${extra}`:""].filter(Boolean).join(" · ")}</div>
      <div class="mod">${f!=null?`最終 <b>${f}</b>(${fmt(mod(f))})`:"—"}</div>`;
    g.appendChild(cell);
  });
+ const raceAbilityChoices=S.ruleset==="2014"&&S.sp?.ch?S.sp.ch.filter(c=>c.t==="ability"):[];
+ if(raceAbilityChoices.length){
+   const box=document.createElement("div");box.className="detail-box";box.style.gridColumn="1 / -1";
+   box.innerHTML=`<div class="row"><span class="label">${S.sp.n}種族屬性選擇</span><b>請在分配基礎值後決定</b></div>`+raceAbilityChoices.map(c=>{
+     const cur=S.spChoices[c.k]||"",other=c.k==="flex1"?S.spChoices.flex2:S.spChoices.flex1;
+     const pool=ABILITIES.filter(a=>(S.sp.n!=="半精靈"||a.k!=="cha")&&a.k!==other);
+     return `<label class="bp" style="display:inline-flex;margin:6px 10px 0 0"><span>${c.label}</span><select data-raceab="${c.k}"><option value="">— 選擇屬性 —</option>${pool.map(a=>`<option value="${a.k}"${cur===a.k?" selected":""}>${a.n} +1</option>`).join("")}</select></label>`;
+   }).join("");
+   g.appendChild(box);
+ }
  g.querySelectorAll("select[data-ab]").forEach(sel=>{
    sel.onchange=()=>{
      const k=sel.dataset.ab;
@@ -3455,6 +3480,7 @@ function renderAbilities(){
    inp.addEventListener("input",()=>apply(false));
    inp.addEventListener("change",()=>apply(true));
  });
+ g.querySelectorAll("[data-raceab]").forEach(sel=>sel.onchange=()=>{S.spChoices[sel.dataset.raceab]=sel.value;renderAbilities();update()});
  /* 購點資訊 */
  const info=$("methodInfo");
  if(S.method==="array"){
@@ -3510,7 +3536,7 @@ function renderBonus(){
  });
 }
 function bonusReady(){
- if(S.ruleset==="2014")return !!S.sp&&speciesChoicesReady();
+ if(S.ruleset==="2014")return !!S.sp&&speciesChoicesReady()&&speciesAbilityChoicesReady14();
  if(!S.bg)return false;
  return S.bonusMode==="21"
    ? (S.bonus.b2&&S.bonus.b1&&S.bonus.b2!==S.bonus.b1)
@@ -3518,11 +3544,14 @@ function bonusReady(){
 }
 function speciesChoicesReady(){
  if(!S.sp||!S.sp.ch)return true;
- if(!S.sp.ch.every(c=>c.when&&!Object.entries(c.when).every(([k,v])=>S.spChoices[k]===v)||!c.minLv||S.level<c.minLv||!!S.spChoices[c.k]))return false;
+ if(!S.sp.ch.every(c=>deferredSpeciesChoice14(c)||c.when&&!Object.entries(c.when).every(([k,v])=>S.spChoices[k]===v)||!c.minLv||S.level<c.minLv||!!S.spChoices[c.k]))return false;
  if(S.ruleset==="2014"&&S.spChoices.hFeat){const f=GFEATS.find(x=>x.n===S.spChoices.hFeat);if(f?.ab?.length>1&&!S.spChoices.hFeatAb)return false}
  if(S.ruleset==="2014"&&S.spChoices.hFeat&&!featEligible14(GFEATS.find(x=>x.n===S.spChoices.hFeat)))return false;
  return true;
 }
+function deferredSpeciesChoice14(c){return S.ruleset==="2014"&&(c.t==="ability"||c.t==="skill")}
+function speciesAbilityChoicesReady14(){return S.ruleset!=="2014"||!S.sp?.ch||S.sp.ch.filter(c=>c.t==="ability").every(c=>!!S.spChoices[c.k])}
+function speciesSkillChoices14(){return S.ruleset==="2014"&&S.sp?.ch?S.sp.ch.filter(c=>c.t==="skill"):[]}
 function backgroundChoicesReady14(){if(S.ruleset!=="2014"||!S.bg)return true;const d=BG14_DETAILS[S.bg.n];return !d||d.choices.every(c=>!!S.bgChoices14[c.k])}
 function abilitiesReady(){
  if(ABILITIES.some(a=>S.base[a.k]==null))return false;
@@ -3538,16 +3567,18 @@ function renderSkills(){
  const g=$("skillGrid");g.innerHTML="";
  if(!S.cls||!S.bg){$("skillHint").textContent="請先完成職業與背景的選擇。";return}
  const fixed=new Set(S.bg.sk);
+ const racialChoices=speciesSkillChoices14(),racialSelected=new Set(racialChoices.map(c=>S.spChoices[c.k]).filter(Boolean));
  /* 與背景重複的職業可選技能不可再選 */
- S.skills.forEach(s=>{if(fixed.has(s)||!S.cls.sk.includes(s))S.skills.delete(s)});
+ S.skills.forEach(s=>{if(fixed.has(s)||racialSelected.has(s)||!S.cls.sk.includes(s))S.skills.delete(s)});
  $("skillHint").textContent=`背景「${S.bg.n}」已提供:${S.bg.sk.join("、")}(金色固定)。請再從「${S.cls.n}」職業列表中選擇 ${S.cls.skc} 項技能(若與背景重複則不可選)。`;
  SKILLS.forEach(sk=>{
    const b=document.createElement("button");
    const isFixed=fixed.has(sk.n);
    const inClass=S.cls.sk.includes(sk.n);
-   b.className="skill-chip"+(isFixed?" fixed":S.skills.has(sk.n)?" selected":"");
-   b.innerHTML=`<span>${sk.n}</span><span class="ab">${ABN[sk.a]}${isFixed?" · 背景":""}</span>`;
-   if(isFixed){b.tabIndex=-1}
+   const isRacial=racialSelected.has(sk.n);
+   b.className="skill-chip"+(isFixed||isRacial?" fixed":S.skills.has(sk.n)?" selected":"");
+   b.innerHTML=`<span>${sk.n}</span><span class="ab">${ABN[sk.a]}${isFixed?" · 背景":isRacial?" · 種族":""}</span>`;
+   if(isFixed||isRacial){b.tabIndex=-1}
    else if(!inClass){b.disabled=true}
    else{
      b.onclick=()=>{
@@ -3558,11 +3589,22 @@ function renderSkills(){
    }
    g.appendChild(b);
  });
+ if(racialChoices.length){
+   const box=document.createElement("div");box.className="detail-box";box.style.gridColumn="1 / -1";
+   box.innerHTML=`<div class="row"><span class="label">${S.sp.n}額外技能熟練</span><b>與背景及職業技能不可重複</b></div>`+racialChoices.map(c=>{
+     const cur=S.spChoices[c.k]||"",others=new Set([...fixed,...S.skills,...racialChoices.filter(x=>x.k!==c.k).map(x=>S.spChoices[x.k]).filter(Boolean)]);
+     const pool=(c.pool||ALL_SKILLS).filter(n=>n===cur||!others.has(n));
+     return `<label class="bp" style="display:inline-flex;margin:6px 10px 0 0"><span>${c.label}</span><select data-raceskill="${c.k}"><option value="">— 選擇技能 —</option>${pool.map(n=>`<option value="${n}"${cur===n?" selected":""}>${n}（${ABN[SKILLS.find(x=>x.n===n).a]}）</option>`).join("")}</select></label>`;
+   }).join("");
+   g.appendChild(box);
+   g.querySelectorAll("[data-raceskill]").forEach(sel=>sel.onchange=()=>{S.spChoices[sel.dataset.raceskill]=sel.value;renderSkills();update()});
+ }
  const remain=S.cls.skc-S.skills.size;
- $("next3").disabled=remain!==0;
- $("skillHint").textContent+=remain>0?` 還需選擇 ${remain} 項。`:" ✔ 已選滿。";
+ const racialRemain=racialChoices.filter(c=>!S.spChoices[c.k]).length;
+ $("next3").disabled=remain!==0||racialRemain!==0;
+ $("skillHint").textContent+=remain>0?` 還需選擇 ${remain} 項職業技能。`:racialRemain>0?` 還需選擇 ${racialRemain} 項種族技能。`:" ✔ 已選滿。";
 }
-function skillsReady(){return S.cls&&S.bg&&S.skills.size===S.cls.skc}
+function skillsReady(){return S.cls&&S.bg&&S.skills.size===S.cls.skc&&speciesSkillChoices14().every(c=>!!S.spChoices[c.k])}
 
 /* ============ 第6步:升級 ============ */
 function renderLevel(){
@@ -4916,7 +4958,7 @@ function toast(msg){
  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),1900);
 }
 
-/* ============ 法錶速查頁 ============ */
+/* ============ 法表速查頁 ============ */
 const CLS_NAME_MAP={B:"吟遊詩人",C:"牧師",D:"德魯伊",P:"聖武士",R:"遊俠",S:"術士",K:"邪術師",W:"法師"};
 let srefPending=null;
 function renderSpellRefList(){
