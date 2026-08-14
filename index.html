@@ -3953,7 +3953,7 @@ function renderLevel(){
  }
 
  /* 法術位 */
- if(p.caster||S.ruleset==="2014"&&multiclassCasterLevel()>0){
+ if(S.ruleset==="2014"?castingProfiles2014().length>0:!!p.caster){
    const castLv=S.ruleset==="2014"?multiclassCasterLevel():S.level;
    html+=`<h3 class="group-title">法術位${S.ruleset==="2014"?`（多職施法者等級 ${castLv}）`:`(${S.level} 級)`}</h3>`;
    if(p.caster==="pact"){
@@ -4638,8 +4638,8 @@ function playPanel(){
 }
 /* 法術位計數器(角色卡頁) */
 function slotTracker(){
- const ci=castInfo();
- if(!ci)return "";
+ const profiles14=S.ruleset==="2014"?castingProfiles2014():[],ci=S.ruleset==="2014"?null:castInfo();
+ if(S.ruleset==="2014"?!profiles14.length:!ci)return "";
  let h=`<div class="fs-sec" style="grid-column:1/-1"><div class="st">法術位追蹤</div>
    <div style="font-size:11.5px;color:var(--muted);margin-bottom:6px">點選 − 消耗、+ 恢復;長休後按上限重置。</div><div class="slot-track">`;
  const cell=(key,label,maxN)=>{
@@ -4653,11 +4653,11 @@ function slotTracker(){
        <button data-slot="${key}" data-d="-1"${used<=0?" disabled":""}>+</button>
      </div></div>`;
  };
- if(ci.type==="pact"){
-   h+=cell("pact",`契約魔法 ${ci.pact.sl} 環`,ci.pact.n);
- }else{
-   ci.slots.forEach((v,i)=>{h+=cell("l"+(i+1),`${i+1} 環`,v)});
- }
+ if(S.ruleset==="2014"){
+   const shared=SLOTS_FULL[multiclassCasterLevel()]||[];shared.forEach((v,i)=>{h+=cell("l"+(i+1),`${i+1} 環`,v)});
+   const pact=profiles14.find(x=>x.name==="邪術師");if(pact){const [n,sl]=PACT[pact.lv]||[0,0];if(n)h+=cell("pact",`契約魔法 ${sl} 環`,n)}
+ }else if(ci.type==="pact")h+=cell("pact",`契約魔法 ${ci.pact.sl} 環`,ci.pact.n);
+ else ci.slots.forEach((v,i)=>{h+=cell("l"+(i+1),`${i+1} 環`,v)});
  h+=`</div></div>`;
  return h;
 }
@@ -5249,8 +5249,10 @@ function renderFinal(){
  }
 
  /* 法術位 */
- const ci=castInfo();
- if(ci){
+ const ci=S.ruleset==="2014"?null:castInfo(),profiles14=S.ruleset==="2014"?castingProfiles2014():[];
+ if(profiles14.length){
+   html+=`<div class="fs-sec"><div class="st">施法</div>${profiles14.map(x=>`${x.name}：${x.ability}施法 · 最高 ${x.max} 環`).join("<br>")}</div>`;
+ }else if(ci){
    const abk={"智力":"int","感知":"wis","魅力":"cha"}[ci.ability];
    const af=abk?finalScore(abk):null;
    html+=`<div class="fs-sec"><div class="st">施法</div>
@@ -5423,8 +5425,7 @@ function renderFinal(){
  };
  el.querySelectorAll("[data-slot]").forEach(btn=>btn.onclick=()=>{
    const k=btn.dataset.slot, d=+btn.dataset.d;
-   const ci2=castInfo();if(!ci2)return;
-   const maxN=k==="pact"?ci2.pact.n:ci2.slots[+k.slice(1)-1];
+   let maxN=0;if(S.ruleset==="2014"){if(k==="pact"){const p=castingProfiles2014().find(x=>x.name==="邪術師");maxN=p?(PACT[p.lv]||[0])[0]:0}else maxN=(SLOTS_FULL[multiclassCasterLevel()]||[])[+k.slice(1)-1]||0}else{const ci2=castInfo();if(!ci2)return;maxN=k==="pact"?ci2.pact.n:ci2.slots[+k.slice(1)-1]}if(!maxN)return;
    S.slotsUsed[k]=Math.min(maxN,Math.max(0,(S.slotsUsed[k]||0)+d));
    renderFinal();autoSave();
  });
