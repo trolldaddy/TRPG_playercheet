@@ -3069,7 +3069,7 @@ const S={
  bonusMode:"21",
  bonus:{b2:"",b1:"",c1:"",c2:"",c3:""},
  skills:new Set(),
- level:1,sub:null,classLevels:{},classSubs:{},spellByClass:{},asiByClass:{},startGear14:{},classChoices14:{},bgChoices14:{},hpMode:"avg",hpRolls:{},hpRollsByClass:{},asi:{},boon:"",mastery:new Set(),style:"",boonAb:"",primalSkill:"",cantrips:new Set(),spellbook:new Set(),prepared:new Set(),customSpells:[],slotsUsed:{},metamagic:new Set(),featSpells:{},invocations:new Set(),expertise:new Set(),divineOrder:"",primalOrder:"",blessed:"",efury:"",showAC:false,portrait:"",spChoices:{},gear:{armor:"",unarmored:"auto",shield:false,weapons:[],miscAC:0,miscLabel:"",items:"",gold:{pp:0,gp:0,sp:0,cp:0}},id:null,play:{hp:null,thp:0,hd:null,ds:{s:0,f:0},insp:false,res:{},resMax:{},custom:[],notes:""},bio:{look:"",traits:"",story:"",allies:"",notes:""},
+ level:1,sub:null,classLevels:{},classSubs:{},spellByClass:{},asiByClass:{},startGear14:{},classChoices14:{},bgChoices14:{},hpMode:"avg",hpRolls:{},hpRollsByClass:{},asi:{},boon:"",mastery:new Set(),style:"",boonAb:"",primalSkill:"",cantrips:new Set(),spellbook:new Set(),prepared:new Set(),customSpells:[],slotsUsed:{},metamagic:new Set(),featSpells:{},invocations:new Set(),expertise:new Set(),divineOrder:"",primalOrder:"",blessed:"",efury:"",showAC:false,portrait:"",spChoices:{},gear:{armor:"",unarmored:"auto",shield:false,weapons:[],miscAC:0,miscLabel:"",items:"",gold:{pp:0,gp:0,sp:0,cp:0}},id:null,play:{hp:null,hpMax:null,thp:0,hd:null,ds:{s:0,f:0},insp:false,res:{},resMax:{},custom:[],notes:""},bio:{look:"",traits:"",story:"",allies:"",notes:""},
  step:0
 };
 const STANDARD=[15,14,13,12,10,8];
@@ -3558,6 +3558,15 @@ function speciesChoicesReady(){
  if(S.ruleset==="2014"&&S.spChoices.hFeat){const f=GFEATS.find(x=>x.n===S.spChoices.hFeat);if(f?.ab?.length>1&&!S.spChoices.hFeatAb)return false}
  if(S.ruleset==="2014"&&S.spChoices.hFeat&&!featEligible14(GFEATS.find(x=>x.n===S.spChoices.hFeat)))return false;
  return true;
+}
+function syncPlayHP(maxHP=hpTotal()){
+ if(maxHP==null||!S.play)return maxHP;
+ const pl=S.play,oldMax=Number.isFinite(+pl.hpMax)?+pl.hpMax:null;
+ if(pl.hp==null)pl.hp=maxHP;
+ else if(oldMax!=null&&oldMax!==maxHP&&+pl.hp>=oldMax)pl.hp=maxHP;
+ else pl.hp=Math.max(0,Math.min(maxHP,+pl.hp||0));
+ pl.hpMax=maxHP;
+ return maxHP;
 }
 function deferredSpeciesChoice14(c){return S.ruleset==="2014"&&(c.t==="ability"||c.t==="skill")}
 function speciesAbilityChoicesReady14(){return S.ruleset!=="2014"||!S.sp?.ch||S.sp.ch.filter(c=>c.t==="ability").every(c=>!!S.spChoices[c.k])}
@@ -4522,7 +4531,7 @@ function classResources(){
  return out;
 }
 function playPanel(){
- const maxHP=hpTotal();
+ const maxHP=syncPlayHP();
  if(maxHP==null)return "";
  const pl=S.play;
  if(pl.hp==null)pl.hp=maxHP;
@@ -4619,6 +4628,7 @@ function newId(){return "c"+Date.now().toString(36)+Math.random().toString(36).s
 function metaFields(){return {name:$("fName").value,player:$("fPlayer").value,align:$("fAlign").value,faith:$("fFaith").value,gender:$("fGender").value,age:$("fAge").value};}
 
 function serialize(){
+ syncPlayHP();
  return {v:SAVE_VERSION,ruleset:S.ruleset,id:S.id,ts:Date.now(),
   cls:S.cls?.n??null,bg:S.bg?.n??null,sp:S.sp?.n??null,sub:S.sub,
   method:S.method,base:{...S.base},rolled:[...S.rolled],
@@ -4708,7 +4718,8 @@ function deserialize(o){
  S.showAC=!!o.showAC;
  S.portrait=(typeof o.portrait==="string"&&o.portrait.startsWith("data:image/"))?o.portrait:"";
  S.bio=Object.assign({look:"",traits:"",story:"",allies:"",notes:""},o.bio||{});
- S.play=Object.assign({hp:null,thp:0,hd:null,ds:{s:0,f:0},insp:false,res:{},resMax:{},custom:[],notes:""},o.play||{});
+ S.play=Object.assign({hp:null,hpMax:null,thp:0,hd:null,ds:{s:0,f:0},insp:false,res:{},resMax:{},custom:[],notes:""},o.play||{});
+ syncPlayHP();
  S.id=o.id||newId();
  const m=o.meta||{};
  [["fName","name"],["fPlayer","player"],["fAlign","align"],["fFaith","faith"],["fGender","gender"],["fAge","age"]]
@@ -4864,7 +4875,7 @@ function resetState(){
  S.cantrips=new Set();S.spellbook=new Set();S.prepared=new Set();S.customSpells=[];S.slotsUsed={};S.spChoices={};S.bgChoices14={};
  S.gear={armor:"",unarmored:"auto",shield:false,weapons:[],miscAC:0,miscLabel:"",items:"",gold:{pp:0,gp:0,sp:0,cp:0}};S.showAC=false;S.portrait="";
  S.bio={look:"",traits:"",story:"",allies:"",notes:""};
- S.play={hp:null,thp:0,hd:null,ds:{s:0,f:0},insp:false,res:{},resMax:{},custom:[],notes:""};
+ S.play={hp:null,hpMax:null,thp:0,hd:null,ds:{s:0,f:0},insp:false,res:{},resMax:{},custom:[],notes:""};
  S.id=newId();
  ["fName","fPlayer","fAlign","fFaith","fGender","fAge"].forEach(id=>$(id).value="");
 }
