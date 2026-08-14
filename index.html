@@ -2877,7 +2877,17 @@ const START_GEAR_2014={
  邪術師:{groups:[["輕弩與 20 支弩矢","任一簡易武器"],["材料包","奧術法器"],["學者套組","地城探索者套組"]],fixed:"皮甲、任一簡易武器、兩把匕首"},
  法師:{groups:[["長棍","匕首"],["材料包","奧術法器"],["學者套組","探索套組"]],fixed:"法術書"}
 };
+const EQUIPMENT_PACKS_2014={
+ 外交官套組:"箱子、2 個地圖或卷軸匣、精美服裝、墨水、羽毛筆、油燈、2 瓶油、5 張紙、香水、封蠟、肥皂",
+ 藝人套組:"背包、睡袋、2 套戲服、5 根蠟燭、5 日口糧、水袋、易容工具",
+ 地城探索者套組:"背包、撬棍、鐵鎚、10 根岩釘、10 支火把、火絨盒、10 日口糧、水袋、50 尺麻繩",
+ 探索套組:"背包、睡袋、炊具、火絨盒、10 支火把、10 日口糧、水袋、50 尺麻繩",
+ 祭司套組:"背包、毛毯、10 根蠟燭、火絨盒、捐獻箱、2 塊薰香、香爐、法衣、2 日口糧、水袋",
+ 學者套組:"背包、學識書籍、墨水、羽毛筆、10 張羊皮紙、一小袋沙、小刀",
+ 竊賊套組:"背包、1,000 顆滾珠、10 尺細繩、鈴鐺、5 根蠟燭、撬棍、鐵鎚、10 根岩釘、罩燈、2 瓶油、5 日口糧、火絨盒、水袋、50 尺麻繩"
+};
 function startingGearText2014(){const d=START_GEAR_2014[S.cls?.n],p=S.startGear14||{};if(!d)return "";return [...d.groups.map((g,i)=>g[p[i]??0]),d.fixed].filter(Boolean).join("、")}
+function expandedStartingGear2014(){const raw=startingGearText2014();const packs=Object.entries(EQUIPMENT_PACKS_2014).filter(([n])=>raw.includes(n)).map(([n,v])=>`${n}：${v}`);return {raw,packs}}
 
 /* 護甲與武器熟練判定 */
 function hasFeatNamed(name){
