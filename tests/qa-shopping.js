@@ -1,0 +1,23 @@
+const {chromium}=require('playwright');
+const assert=require('assert');
+(async()=>{
+ const browser=await chromium.launch({headless:true,channel:'chrome'}),page=await browser.newPage({viewport:{width:1280,height:900}});
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('http://127.0.0.1:18766/index.html',{waitUntil:'networkidle'});
+ await page.evaluate(()=>{document.getElementById('rulesetModal')?.classList.remove('open');S.ruleset='2024';syncRulesetUI();S.cls=CLASSES.find(x=>x.n==='遊蕩者');S.classLevels={遊蕩者:1};S.bg=BACKGROUNDS.find(x=>x.n==='罪犯');S.sp=SPECIES.find(x=>x.n==='人類');S.gear={armor:'',unarmored:'auto',shield:false,weapons:[],miscAC:0,miscLabel:'',items:'',gold:{pp:0,gp:0,sp:0,cp:0},purchases:{}};go(7)});
+ await page.click('#takeBgGear24');
+ let state=await page.evaluate(()=>({cp:moneyCp(),weapons:S.gear.weapons.slice(),marker:S.gear.bgPackage24}));
+ assert.equal(state.cp,1600);assert.equal(state.weapons.filter(x=>x==='匕首').length,2);assert.equal(state.marker,'罪犯');
+ await page.evaluate(()=>go(10));await page.click('[data-shop-cat="武器"]');await page.fill('#shopQ','匕首');
+ const layout=await page.evaluate(()=>({steps:STEP_NAMES.slice(),ownedBeforeGrid:document.querySelector('.shop-owned').compareDocumentPosition(document.querySelector('.shop-grid'))&Node.DOCUMENT_POSITION_FOLLOWING,active:document.querySelector('[data-shop-cat].active')?.textContent}));
+ assert.equal(layout.steps.at(-1),'作者');assert(layout.ownedBeforeGrid);assert.equal(layout.active,'武器');
+ await page.click('[data-buy="w:匕首"]');
+ state=await page.evaluate(()=>({cp:moneyCp(),qty:S.gear.purchases['w:匕首'],weapons:S.gear.weapons.length}));
+ assert.deepEqual(state,{cp:1400,qty:1,weapons:3});
+ await page.click('[data-refund="w:匕首"]');
+ state=await page.evaluate(()=>({cp:moneyCp(),qty:S.gear.purchases['w:匕首']||0,weapons:S.gear.weapons.length}));
+ assert.deepEqual(state,{cp:1600,qty:0,weapons:2});
+ await page.evaluate(()=>go(8));await page.click('[data-r="weapon"]');const mastery=page.locator('#refBody .ft[data-tip]').first();await mastery.hover();
+ const box=await page.locator('#featureTip').boundingBox();assert(box&&box.x>=0&&box.y>=0&&box.x+box.width<=1280);
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({shop:'ok',tooltip:box}));await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

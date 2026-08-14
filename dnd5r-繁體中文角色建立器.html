@@ -212,7 +212,7 @@ aside.sheet{border-left:1px solid var(--line);padding:clamp(18px,2vw,26px) clamp
 
 /* 旁註氣泡 */
 .ft{border-bottom:1px dotted var(--gold);cursor:help;position:relative}
-.ft:hover::after,.ft:focus::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 7px);background:#2a2118;color:#ece3c9;border:1px solid var(--leaf);padding:9px 13px;width:310px;max-width:74vw;font-size:12.5px;line-height:1.6;z-index:60;white-space:normal;font-family:var(--sans);pointer-events:none;box-shadow:3px 3px 0 rgba(42,33,24,.18)}
+#featureTip{display:none;position:fixed;z-index:95;width:310px;max-width:calc(100vw - 16px);background:#2a2118;color:#ece3c9;border:1px solid var(--leaf);padding:9px 13px;font-size:12.5px;line-height:1.6;font-family:var(--sans);pointer-events:none;box-shadow:3px 3px 0 rgba(42,33,24,.18);white-space:normal;overflow-wrap:anywhere}
 .timeline .tl-row,.detail-box{overflow:visible}
 
 /* ══ 對開角色卡 ══ */
@@ -269,7 +269,7 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
 .spell-chip:hover:not(:disabled){background:#f5efdd}
 .spell-chip .sn{display:flex;justify-content:space-between;gap:6px;align-items:baseline}
 .spell-chip .tags{font-size:10.5px;color:var(--lapis);white-space:nowrap;font-family:var(--sans)}
-.spell-chip .sd{font-size:12px;color:var(--muted);line-height:1.55}
+.spell-chip .sd{font-size:12px;color:var(--muted);line-height:1.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
 .spell-chip.selected{border-left-color:var(--gold);background:#f7f1df}
 .spell-chip.selected .sn>span:first-child{color:var(--gold);font-weight:600}
 .spell-chip.inbook{border-left-color:var(--leaf);background:#f7f2e0}
@@ -372,6 +372,16 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
 .gold-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 .gold-row input{width:68px;padding:5px;text-align:center;font-size:13px}
 .gold-row span{font-size:13px;color:var(--gold-dim)}
+.shop-toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:9px;margin:12px 0}
+.shop-balance{padding:9px 12px;border:1px solid var(--line-soft);background:var(--panel);color:var(--gold);font-weight:700;white-space:nowrap}
+.shop-tabs{margin:12px 0 0}
+.shop-tabs button{min-width:92px}
+.shop-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line-soft);border-right:0;border-bottom:0}
+.shop-item{padding:11px;border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);background:var(--panel);min-width:0}
+.shop-item .sn{font-weight:700}.shop-item .sm{font-size:12px;color:var(--muted);min-height:20px;margin:3px 0 8px}.shop-item button{width:100%;padding:6px}
+.shop-owned{margin-top:18px}.shop-owned li{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px dotted var(--line-soft)}
+@media(max-width:780px){.shop-toolbar{grid-template-columns:1fr}.shop-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.shop-grid{grid-template-columns:1fr}}
 
 /* ══ 角色畫像 ══ */
 .sheet-head{display:flex;gap:clamp(14px,2vw,26px);align-items:flex-start;margin-bottom:6px}
@@ -690,6 +700,7 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
       <button onclick="exportJSON()">匯出 JSON</button>
       <button data-go="6">← 返回法術頁</button>
       <button data-go="8">速查 · 武器與專長</button>
+      <button data-go="10">購物清單</button>
     </div>
     <div class="final-sheet" id="finalSheet"></div>
   </section>
@@ -721,11 +732,11 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
       <select id="srefCls"><option value="all">全部職業</option><option value="B">吟遊詩人</option><option value="C">牧師</option><option value="D">德魯伊</option><option value="P">聖武士</option><option value="R">遊俠</option><option value="S">術士</option><option value="K">邪術師</option><option value="W">法師</option></select>
     </div>
     <div id="srefBody"></div>
-    <div class="step-nav"><button class="btn-back" data-go="8">← 返回速查</button><button data-go="10">聯絡作者 →</button></div>
+    <div class="step-nav"><button class="btn-back" data-go="8">← 返回速查</button><button data-go="10">購物清單 →</button></div>
   </section>
 
   <!-- 第 11 步:聯絡作者 -->
-  <section class="step-panel" data-step="10">
+  <section class="step-panel" data-step="11">
     <h2 class="step-title">聯絡作者</h2>
     <p class="step-hint">關於本工具的意見與反饋,歡迎隨時聯絡。</p>
     <div class="asi-block" style="max-width:640px">
@@ -743,7 +754,15 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
         <span style="color:var(--muted);font-size:12px">另:本工具為非官方的愛好者作品。《龍與地下城》(Dungeons &amp; Dragons)及其相關規則內容的著作權歸 Wizards of the Coast 所有,本工具中的規則條目系依據 2024 版《玩家手冊》整理的中文摘要,僅供學習與跑團參考。</span>
       </div>
     </div>
-    <div class="step-nav"><button class="btn-back" data-go="9">← 返回法表</button><span></span></div>
+    <div class="step-nav"><button class="btn-back" data-go="10">← 返回購物</button><span></span></div>
+  </section>
+
+  <!-- 第 12 步:購物 -->
+  <section class="step-panel" data-step="10">
+    <h2 class="step-title">購物清單</h2>
+    <p class="step-hint">使用角色目前持有的錢購買裝備；不論採用起始裝備或起始金錢都能使用。購買的武器、護甲、工具與冒險用品會同步到角色卡。</p>
+    <div id="shopBody"></div>
+    <div class="step-nav"><button class="btn-back" data-go="7">← 返回角色卡</button><button data-go="11">聯絡作者 →</button></div>
   </section>
 </div>
 
@@ -828,6 +847,8 @@ const BACKGROUNDS_2024=[
  {n:"士兵",ab:["str","dex","con"],feat:"蠻力攻擊者",sk:["運動","威嚇"],tool:"骰子組合",desc:"受過操練、歷經戰陣的軍人。"},
  {n:"流浪兒",ab:["dex","wis","cha"],feat:"幸運",sk:["洞悉","隱匿"],tool:"盜賊工具",desc:"在街頭巷尾自力求生的流浪者。"}
 ];
+const BG_GEAR_2024={侍僧:{items:"書法用具、祈禱書、聖徽、10 張羊皮紙、長袍",gp:8},工匠:{items:"一種工匠工具、2 個小袋、旅行服裝",gp:32},江湖騙子:{items:"偽造工具、戲服、精美服裝",gp:15},罪犯:{items:"盜賊工具、撬棍、2 個小袋、旅行服裝",weapons:["匕首","匕首"],gp:16},藝人:{items:"一種樂器、2 套戲服、鏡子、香水、旅行服裝",gp:11},農夫:{items:"木匠工具、治療者工具包、鐵鍋、鐵鏟、旅行服裝",weapons:["鐮刀"],gp:30},衛士:{items:"骰子組合、罩燈、手銬、旅行服裝、20 支弩矢",weapons:["矛","輕弩"],gp:12},嚮導:{items:"製圖工具、睡袋、箭袋、帳篷、旅行服裝、20 支箭",weapons:["短弓"],gp:3},隱士:{items:"草藥工具、睡袋、知識書籍、油燈、3 瓶油、旅行服裝",weapons:["木杖"],gp:16},商人:{items:"領航工具、2 個小袋、旅行服裝",gp:22},貴族:{items:"龍棋組合、精美服裝、香水",gp:29},賢者:{items:"書法用具、歷史書籍、8 張羊皮紙、長袍",weapons:["木杖"],gp:8},水手:{items:"領航工具、50 尺麻繩、旅行服裝",weapons:["匕首"],gp:20},抄寫員:{items:"書法用具、精美服裝、油燈、3 瓶油、12 張羊皮紙",gp:23},士兵:{items:"骰子組合、治療者工具包、箭袋、旅行服裝、20 支箭",weapons:["矛","短弓"],gp:14},流浪兒:{items:"盜賊工具、骰子組合、睡袋、2 個小袋、旅行服裝",weapons:["匕首","匕首"],gp:16}};
+function applyBgGear24(){const d=BG_GEAR_2024[S.bg?.n];if(!d||S.gear.bgPackage24){toast("背景起始裝備已領取；如需更換請先重設角色裝備");return}S.gear.items=[S.gear.items,d.items].filter(Boolean).join("、");(d.weapons||[]).forEach(n=>S.gear.weapons.push(n));setMoneyCp(moneyCp()+d.gp*100);S.gear.bgPackage24=S.bg.n;renderFinal();update();autoSave();toast(`已領取${S.bg.n}背景裝備與 ${d.gp} gp`)}
 
 /* 2024 起源專長說明 */
 const FEATS={
@@ -2863,6 +2884,18 @@ const ARMORS=[
  {n:"全身板甲",cat:"重甲",ac:18,str:15,stealth:true,w:65,gp:1500}
 ];
 const SHIELD={n:"盾牌",ac:2,w:6,gp:10};
+/* 商店價格以銅幣為最小單位；2014/2024 共用一般裝備，2024 另含火器。 */
+const SHOP_WEAPON_PRICE={棍棒:10,匕首:200,巨棒:20,手斧:500,標槍:50,輕錘:200,釘頭錘:500,木杖:20,鐮刀:100,矛:100,飛鏢:5,輕弩:2500,短弓:2500,投石索:10,戰斧:1000,連枷:1000,長柄斧:2000,巨斧:3000,巨劍:5000,戟:2000,騎槍:1000,長劍:1500,巨錘:1000,晨星:1500,長槍:500,刺劍:2500,彎刀:2500,短劍:1000,三叉戟:500,戰錘:1500,戰鎬:500,鞭:200,吹箭筒:1000,手弩:7500,重弩:5000,長弓:5000,火槍:50000,手槍:25000};
+const SHOP_TOOLS=[["煉金工具",5000],["釀酒工具",200],["書法用具",1000],["木匠工具",800],["製圖工具",1500],["修鞋工具",500],["廚師工具",100],["玻璃工工具",3000],["珠寶工具",2500],["皮匠工具",500],["石匠工具",1000],["繪畫工具",1000],["陶匠工具",1000],["鐵匠工具",2000],["修補工具",5000],["織布工具",100],["木雕工具",100],["易容工具",2500],["偽造工具",1500],["草藥工具",500],["領航工具",2500],["毒藥工具",5000],["盜賊工具",2500],["骰子組合",10],["龍棋組合",100],["一種樂器",200]];
+const SHOP_GEAR=[["背包",200],["睡袋",100],["毛毯",50],["滾珠袋",100],["鐵蒺藜袋",100],["蠟燭",1],["鐵鍊（10 尺）",500],["攀爬工具",2500],["撬棍",200],["火絨盒",50],["火把",1],["治療者工具包",500],["聖水",2500],["罩燈",500],["牛眼提燈",1000],["油（瓶）",10],["麻繩（50 尺）",100],["口糧（1 日）",50],["水袋",20],["帳篷",200],["箭（20 支）",100],["弩矢（20 支）",100],["投石索彈丸（20 顆）",4],["藥水／治療",5000],["奧術法器",500],["德魯伊法器",100],["聖徽",500],["材料包",2500],["精美服裝",1500],["旅行服裝",200],["法術書",5000]];
+function shopCatalog(){const weapons=WEAPONS.filter(w=>S.ruleset==="2024"||!["火槍","手槍"].includes(w[1])).map(w=>({id:"w:"+w[1],n:w[1],cat:"武器",cp:SHOP_WEAPON_PRICE[w[1]]||0,note:w[2]+" · "+w[3]}));const armor=ARMORS.map(a=>({id:"a:"+a.n,n:a.n,cat:"護甲",cp:a.gp*100,note:a.cat+" · AC "+a.ac})).concat({id:"a:盾牌",n:"盾牌",cat:"護甲",cp:1000,note:"盾牌 · AC +2"});return weapons.concat(armor,SHOP_TOOLS.map(x=>({id:"t:"+x[0],n:x[0],cat:"工具",cp:x[1],note:"工具"})),SHOP_GEAR.map(x=>({id:"g:"+x[0],n:x[0],cat:"冒險用品",cp:x[1],note:"一般裝備"})))}
+function moneyCp(){const g=S.gear.gold||{};return (g.pp||0)*1000+(g.gp||0)*100+(g.sp||0)*10+(g.cp||0)}
+function setMoneyCp(cp){cp=Math.max(0,Math.floor(cp));S.gear.gold={pp:0,gp:Math.floor(cp/100),sp:Math.floor(cp%100/10),cp:cp%10}}
+function priceText(cp){if(cp>=100&&cp%100===0)return cp/100+" gp";if(cp>=10&&cp%10===0)return cp/10+" sp";return cp+" cp"}
+function shopBought(){return S.gear.purchases||(S.gear.purchases={})}
+function buyShopItem(id){const it=shopCatalog().find(x=>x.id===id);if(!it)return;if(moneyCp()<it.cp){toast("持有金錢不足");return}setMoneyCp(moneyCp()-it.cp);const bag=shopBought();bag[id]=(bag[id]||0)+1;if(it.cat==="武器")S.gear.weapons.push(it.n);else if(it.n==="盾牌")S.gear.shield=true;else if(it.cat==="護甲")S.gear.armor=it.n;renderShop();if(S.step===7)renderFinal();update();autoSave()}
+function refundShopItem(id){const it=shopCatalog().find(x=>x.id===id),bag=shopBought();if(!it||!bag[id])return;bag[id]--;if(!bag[id])delete bag[id];setMoneyCp(moneyCp()+it.cp);if(it.cat==="武器"){const i=S.gear.weapons.lastIndexOf(it.n);if(i>=0)S.gear.weapons.splice(i,1)}if(it.n==="盾牌"&&!bag[id])S.gear.shield=false;if(it.cat==="護甲"&&it.n!=="盾牌"&&!bag[id]&&S.gear.armor===it.n)S.gear.armor="";renderShop();if(S.step===7)renderFinal();update();autoSave()}
+function purchasedText(cat){const map=new Map(shopCatalog().map(x=>[x.id,x]));return Object.entries(shopBought()).filter(([id])=>map.get(id)?.cat===cat).map(([id,q])=>map.get(id).n+(q>1?` ×${q}`:"")).join("、")}
 const START_GEAR_2014={
  野蠻人:{groups:[["巨斧","任一軍用近戰武器"],["兩把手斧","任一簡易武器"]],fixed:"探索套組、四支標槍"},
  吟遊詩人:{groups:[["刺劍","長劍","任一簡易武器"],["外交官套組","藝人套組"],["魯特琴","任一樂器"]],fixed:"皮甲、匕首"},
@@ -3298,7 +3331,7 @@ function hpTotal(){
 }
 
 /* ============ 步驟條 ============ */
-const STEP_NAMES=["職業","起源","屬性","技能","詳情","升級","法術","角色卡","速查","法表","作者"];
+const STEP_NAMES=["職業","起源","屬性","技能","詳情","升級","法術","角色卡","速查","法表","購物","作者"];
 function renderNav(){
  const nav=$("stepNav");nav.innerHTML="";
  STEP_NAMES.forEach((n,i)=>{
@@ -3330,6 +3363,7 @@ function go(i){
  if(i===7)renderFinal();
  if(i===8)renderRef();
  if(i===9)renderSpellRefList();
+ if(i===10)renderShop();
 }
 
 /* ============ 第1步:職業 ============ */
@@ -4136,15 +4170,15 @@ function renderSpells2014(){
    st.known=clean(st.known,sp=>legal(sp)&&!fixedNames.has(sp.n)).slice(0,ci.prep);if(ci.schools){let free=0;st.known=st.known.filter(n=>{const school=meta[n]?.school,restricted=!ci.schools.includes(school);if(restricted&&free>=ci.freeMax)return false;if(restricted)free++;return true})}if(ci.magicSecrets){let used=0;st.known=st.known.filter(n=>{const sp=SPELLS14.find(x=>x.n===n),secret=sp&&!sp.cls.includes(ci.code);if(secret&&used>=ci.magicSecrets)return false;if(secret)used++;return true})}st.book=clean(st.book,legal);st.prepared=clean(st.prepared,sp=>legal(sp)&&st.book.includes(sp.n)&&!fixedNames.has(sp.n)).slice(0,ci.prep);
    h+=`<h3 class="group-title">${ci.name} ${ci.lv} 級${ci.sub?` · ${ci.sub}`:""}</h3><div class="pb-info">施法屬性 <b>${ci.ability}</b>；本職最高可選 <b>${ci.max} 環</b>。${ci.kind==="known"?`已知法術 ${st.known.length}/${ci.prep}`:ci.kind==="book"?`法術書 ${st.book.length}（升級最低 ${ci.bookMax}，額外抄錄不限）；準備 ${st.prepared.length}/${ci.prep}`:`準備 ${st.known.length}/${ci.prep}`}${ci.schools?`<br>主要須選 <b>${ci.schools.join("／")}</b>學派；可跨學派 ${ci.freeMax} 道，目前 ${st.known.filter(n=>!ci.schools.includes(meta[n]?.school)).length}/${ci.freeMax}。`:""}${ci.magicSecrets?`<br>魔法奧秘可選其他職業法術 ${ci.magicSecrets} 道，目前 ${st.known.filter(n=>{const sp=SPELLS14.find(x=>x.n===n);return sp&&!sp.cls.includes(ci.code)}).length}/${ci.magicSecrets}。`:""}</div>`;
    if(ci.name==="德魯伊"&&ci.sub==="大地結社")h+=`<div class="asi-block"><div class="t">大地結社地形</div><select id="land14Sel">${Object.keys(PHB14_LAND_SPELLS).map(n=>`<option value="${n}"${(S.spChoices.land14||"森林")===n?" selected":""}>${n}</option>`).join("")}</select></div>`;
-   if(fixed.length)h+=`<div class="lvl-head"><h4>恆定準備法術</h4><span class="cnt">${fixed.length} 道，不計入準備數量</span></div><div class="spell-grid">${fixed.map(sp=>`<div class="spell-chip inbook" style="cursor:default"><span class="sn">❧ ${sp.lv}環 ${sp.n}<span class="tags">${sp.src} · ${sp.at} 級</span></span><span class="sd">${sp.d}</span></div>`).join("")}</div>`;
-   if(ci.cant){h+=`<div class="lvl-head"><h4>戲法</h4><span class="cnt">${st.cantrips.length}/${ci.cant}</span></div><div class="spell-grid">${spellsFor(ci.code,0).map(sp=>`<button class="spell-chip${st.cantrips.includes(sp.n)?" selected":""}" data-sc="${ci.name}" data-sk="cantrips" data-sp="${sp.n}"${!st.cantrips.includes(sp.n)&&st.cantrips.length>=ci.cant?" disabled":""}><span class="sn">${sp.n}</span><span class="sd">${sp.d}</span></button>`).join("")}</div>`}
-   if(ci.magicSecrets){const key="known",secretUsed=st.known.filter(n=>{const x=SPELLS14.find(y=>y.n===n);return x&&!x.cls.includes(ci.code)}).length;h+=`<div class="lvl-head"><h4>魔法奧秘 · 其他職業戲法</h4></div><div class="spell-grid">${spellOptions2014(ci,0).filter(sp=>!sp.cls.includes(ci.code)).map(sp=>{const on=st.known.includes(sp.n),lock=!on&&(st.known.length>=ci.prep||secretUsed>=ci.magicSecrets);return `<button class="spell-chip${on?" selected":""}" data-sc="${ci.name}" data-sk="${key}" data-sp="${sp.n}"${lock?" disabled":""}><span class="sn">${sp.n} <span class="tags">魔法奧秘</span></span><span class="sd">${sp.d}</span></button>`}).join("")}</div>`}
+   if(fixed.length)h+=`<div class="lvl-head"><h4>恆定準備法術</h4><span class="cnt">${fixed.length} 道，不計入準備數量</span></div><div class="spell-grid">${fixed.map(sp=>`<div class="spell-chip inbook" style="cursor:default"><span class="sn">❧ ${sp.lv}環 <span class="sref" data-sref="${sp.n}">${sp.n}</span><span class="tags">${sp.src} · ${sp.at} 級</span></span><span class="sd">${sp.d}</span></div>`).join("")}</div>`;
+   if(ci.cant){h+=`<div class="lvl-head"><h4>戲法</h4><span class="cnt">${st.cantrips.length}/${ci.cant}</span></div><div class="spell-grid">${spellsFor(ci.code,0).map(sp=>`<button class="spell-chip${st.cantrips.includes(sp.n)?" selected":""}" data-sc="${ci.name}" data-sk="cantrips" data-sp="${sp.n}"${!st.cantrips.includes(sp.n)&&st.cantrips.length>=ci.cant?" disabled":""}><span class="sn"><span class="sref" data-sref="${sp.n}">${sp.n}</span></span><span class="sd">${sp.d}</span></button>`).join("")}</div>`}
+   if(ci.magicSecrets){const key="known",secretUsed=st.known.filter(n=>{const x=SPELLS14.find(y=>y.n===n);return x&&!x.cls.includes(ci.code)}).length;h+=`<div class="lvl-head"><h4>魔法奧秘 · 其他職業戲法</h4></div><div class="spell-grid">${spellOptions2014(ci,0).filter(sp=>!sp.cls.includes(ci.code)).map(sp=>{const on=st.known.includes(sp.n),lock=!on&&(st.known.length>=ci.prep||secretUsed>=ci.magicSecrets);return `<button class="spell-chip${on?" selected":""}" data-sc="${ci.name}" data-sk="${key}" data-sp="${sp.n}"${lock?" disabled":""}><span class="sn"><span class="sref" data-sref="${sp.n}">${sp.n}</span> <span class="tags">魔法奧秘</span></span><span class="sd">${sp.d}</span></button>`}).join("")}</div>`}
    if(ci.kind==="book"){
-     for(let lv=1;lv<=ci.max;lv++)h+=`<div class="lvl-head"><h4>${lv} 環法術書</h4></div><div class="spell-grid">${spellsFor(ci.code,lv).map(sp=>`<button class="spell-chip${st.book.includes(sp.n)?" inbook":""}" data-sc="${ci.name}" data-sk="book" data-sp="${sp.n}"><span class="sn">${sp.n}</span><span class="sd">${sp.d}</span></button>`).join("")}</div>`;
-     h+=`<div class="lvl-head"><h4>從法術書準備</h4><span class="cnt">${st.prepared.length}/${ci.prep}</span></div><div class="spell-grid">${st.book.map(n=>{const sp=SPELLS14.find(x=>x.n===n);return `<button class="spell-chip${st.prepared.includes(n)?" selected":""}" data-sc="${ci.name}" data-sk="prepared" data-sp="${n}"${!st.prepared.includes(n)&&st.prepared.length>=ci.prep?" disabled":""}><span class="sn">${n}</span><span class="sd">${sp?.d||""}</span></button>`}).join("")}</div>`;
+     for(let lv=1;lv<=ci.max;lv++)h+=`<div class="lvl-head"><h4>${lv} 環法術書</h4></div><div class="spell-grid">${spellsFor(ci.code,lv).map(sp=>`<button class="spell-chip${st.book.includes(sp.n)?" inbook":""}" data-sc="${ci.name}" data-sk="book" data-sp="${sp.n}"><span class="sn"><span class="sref" data-sref="${sp.n}">${sp.n}</span></span><span class="sd">${sp.d}</span></button>`).join("")}</div>`;
+     h+=`<div class="lvl-head"><h4>從法術書準備</h4><span class="cnt">${st.prepared.length}/${ci.prep}</span></div><div class="spell-grid">${st.book.map(n=>{const sp=SPELLS14.find(x=>x.n===n);return `<button class="spell-chip${st.prepared.includes(n)?" selected":""}" data-sc="${ci.name}" data-sk="prepared" data-sp="${n}"${!st.prepared.includes(n)&&st.prepared.length>=ci.prep?" disabled":""}><span class="sn"><span class="sref" data-sref="${n}">${n}</span></span><span class="sd">${sp?.d||""}</span></button>`}).join("")}</div>`;
    }else{
      const key="known";
-     for(let lv=1;lv<=ci.max;lv++)h+=`<div class="lvl-head"><h4>${lv} 環${ci.kind==="known"?"已知":"準備"}法術</h4></div><div class="spell-grid">${spellOptions2014(ci,lv).map(sp=>{const on=st[key].includes(sp.n),outside=ci.schools&&!ci.schools.includes(meta[sp.n]?.school),secret=ci.magicSecrets&&!sp.cls.includes(ci.code),freeUsed=ci.schools?st[key].filter(n=>!ci.schools.includes(meta[n]?.school)).length:0,secretUsed=ci.magicSecrets?st[key].filter(n=>{const x=SPELLS14.find(y=>y.n===n);return x&&!x.cls.includes(ci.code)}).length:0,lock=!on&&(st[key].length>=ci.prep||outside&&freeUsed>=ci.freeMax||secret&&secretUsed>=ci.magicSecrets);return `<button class="spell-chip${on?" selected":""}" data-sc="${ci.name}" data-sk="${key}" data-sp="${sp.n}"${lock?" disabled":""}><span class="sn">${sp.n}${outside?` <span class="tags">跨學派</span>`:""}${secret?` <span class="tags">魔法奧秘</span>`:""}</span><span class="sd">${sp.d}</span></button>`}).join("")}</div>`;
+     for(let lv=1;lv<=ci.max;lv++)h+=`<div class="lvl-head"><h4>${lv} 環${ci.kind==="known"?"已知":"準備"}法術</h4></div><div class="spell-grid">${spellOptions2014(ci,lv).map(sp=>{const on=st[key].includes(sp.n),outside=ci.schools&&!ci.schools.includes(meta[sp.n]?.school),secret=ci.magicSecrets&&!sp.cls.includes(ci.code),freeUsed=ci.schools?st[key].filter(n=>!ci.schools.includes(meta[n]?.school)).length:0,secretUsed=ci.magicSecrets?st[key].filter(n=>{const x=SPELLS14.find(y=>y.n===n);return x&&!x.cls.includes(ci.code)}).length:0,lock=!on&&(st[key].length>=ci.prep||outside&&freeUsed>=ci.freeMax||secret&&secretUsed>=ci.magicSecrets);return `<button class="spell-chip${on?" selected":""}" data-sc="${ci.name}" data-sk="${key}" data-sp="${sp.n}"${lock?" disabled":""}><span class="sn"><span class="sref" data-sref="${sp.n}">${sp.n}</span>${outside?` <span class="tags">跨學派</span>`:""}${secret?` <span class="tags">魔法奧秘</span>`:""}</span><span class="sd">${sp.d}</span></button>`}).join("")}</div>`;
    }
  });
  b.innerHTML=h;
@@ -4502,6 +4536,8 @@ function spellSheet(){
  h+=`</div>`;
  return h;
 }
+let shopFilter={q:"",cat:"全部"};
+function renderShop(){const root=$("shopBody");if(!root)return;const all=shopCatalog(),q=shopFilter.q.trim().toLowerCase();const shown=all.filter(x=>(shopFilter.cat==="全部"||x.cat===shopFilter.cat)&&(!q||(x.n+" "+x.note).toLowerCase().includes(q)));const balance=moneyCp(),owned=Object.entries(shopBought()),lookup=new Map(all.map(x=>[x.id,x]));root.innerHTML=`<div class="shop-balance">目前持有：${priceText(balance)}（${balance} cp）</div><div class="shop-owned"><h3>已購買</h3>${owned.length?`<ul>${owned.map(([id,qty])=>{const x=lookup.get(id);return x?`<li><span>${x.n} ×${qty} <small class="dim">${x.cat}</small></span><b>${priceText(x.cp*qty)}</b><button data-refund="${id}">退回 1 件</button></li>`:""}).join("")}</ul>`:`<p class="dim">尚未購買任何物品。</p>`}</div><div class="method-tabs shop-tabs" id="shopTabs">${["全部","武器","護甲","工具","冒險用品"].map(x=>`<button data-shop-cat="${x}" class="${x===shopFilter.cat?"active":""}">${x}</button>`).join("")}</div><div class="shop-toolbar"><input id="shopQ" value="${shopFilter.q}" placeholder="搜尋目前分類的裝備名稱…"><button data-go="7">回角色卡調整金錢</button></div><div class="shop-grid">${shown.map(x=>`<div class="shop-item"><div class="sn">${x.n}</div><div class="sm">${x.note}</div><button data-buy="${x.id}"${balance<x.cp?" disabled":""}>購買 · ${priceText(x.cp)}</button></div>`).join("")||`<div class="shop-item">找不到符合條件的裝備。</div>`}</div><p class="dim" style="margin-top:14px">價格依所選規則版本的基本裝備表整理；商店會使用角色目前實際持有的幣值，因此背景剩餘金錢也能直接購物。</p>`;$("shopQ").oninput=e=>{shopFilter.q=e.target.value;renderShop()};root.querySelectorAll("[data-shop-cat]").forEach(b=>b.onclick=()=>{shopFilter.cat=b.dataset.shopCat;renderShop()});root.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buyShopItem(b.dataset.buy));root.querySelectorAll("[data-refund]").forEach(b=>b.onclick=()=>refundShopItem(b.dataset.refund));root.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(+b.dataset.go))}
 /* 裝備面板 */
 function gearPanel(){
  if(!S.cls)return "";
@@ -4511,6 +4547,7 @@ function gearPanel(){
    const sg=START_GEAR_2014[S.cls.n];
    h+=`<div class="play-box"><div class="pt">PHB 2014 初始裝備</div>${sg.groups.map((opts,i)=>`<label style="display:inline-block;margin:4px 8px 4px 0">選項 ${String.fromCharCode(65+i)} <select data-sg14="${i}">${opts.map((x,j)=>`<option value="${j}"${+(S.startGear14[i]??0)===j?" selected":""}>${x}</option>`).join("")}</select></label>`).join("")}<div style="font-size:12.5px;color:var(--muted);margin-top:6px"><b>目前取得：</b>${startingGearText2014()}</div><div style="font-size:11.5px;color:var(--muted);margin-top:4px">兼職不會再次獲得該職業的初始裝備；背景裝備請依所選背景一併記錄。</div></div>`;
  }
+ else if(S.bg&&BG_GEAR_2024[S.bg.n]){const bgp=BG_GEAR_2024[S.bg.n];h+=`<div class="play-box"><div class="pt">2024 背景起始裝備 · ${S.bg.n}</div><div style="font-size:12.5px;line-height:1.7">${bgp.items}${bgp.weapons?.length?`、${bgp.weapons.join("、")}`:""}、${bgp.gp} gp</div><button type="button" id="takeBgGear24" style="margin-top:7px"${g.bgPackage24?" disabled":""}>${g.bgPackage24?`已領取「${g.bgPackage24}」背景裝備`:"領取背景裝備與剩餘金錢"}</button></div>`}
  /* 護甲 */
  const un=unarmoredOptions();
  h+=`<div class="play-box"><div class="pt">護甲與盾牌</div><div class="gear-ctl">
@@ -4556,8 +4593,11 @@ function gearPanel(){
      ${[["pp","鉑金"],["gp","金幣"],["sp","銀幣"],["cp","銅幣"]].map(([k,l])=>
        `<span>${l}</span><input type="number" min="0" data-gold="${k}" value="${gd[k]||0}">`).join("")}
    </div>
-   <textarea class="fs-ta" data-bio="gearItems" placeholder="冒險裝備、消耗品、魔法物品、坐騎……" style="margin-top:9px;min-height:70px">${g.items||""}</textarea>
-   </div></div>`;
+  <textarea class="fs-ta" data-bio="gearItems" placeholder="冒險裝備、消耗品、魔法物品、坐騎……" style="margin-top:9px;min-height:70px">${g.items||""}</textarea>
+  ${purchasedText("工具")?`<div style="margin-top:7px"><b>購買的工具：</b>${purchasedText("工具")}</div>`:""}
+  ${purchasedText("冒險用品")?`<div style="margin-top:5px"><b>購買的用品：</b>${purchasedText("冒險用品")}</div>`:""}
+  <button type="button" data-go="10" style="margin-top:9px">前往購物清單</button>
+  </div></div>`;
  return h;
 }
 /* 職業資源(建議值,上限可自行修改) */
@@ -4663,7 +4703,7 @@ function slotTracker(){
 }
 
 /* ============ 存檔系統 ============ */
-const SAVE_VERSION=6;
+const SAVE_VERSION=7;
 const SK={roster:"dnd5r:roster",char:id=>"dnd5r:char:"+id,cur:"dnd5r:current"};
 let storeOK=null;
 function storageAvailable(){
@@ -4759,7 +4799,7 @@ function deserialize(o){
  if(o.featSpells&&typeof o.featSpells==="object")Object.entries(o.featSpells).forEach(([k,v])=>{
    if(v&&typeof v==="object")S.featSpells[k]=Object.fromEntries(Object.entries(v).map(([a,b])=>[a,String(b||"")]));
  });
- S.gear=Object.assign({armor:"",unarmored:"auto",shield:false,weapons:[],miscAC:0,miscLabel:"",items:"",gold:{pp:0,gp:0,sp:0,cp:0}},o.gear||{});
+ S.gear=Object.assign({armor:"",unarmored:"auto",shield:false,weapons:[],miscAC:0,miscLabel:"",items:"",gold:{pp:0,gp:0,sp:0,cp:0},purchases:{}},o.gear||{});S.gear.purchases=S.gear.purchases&&typeof S.gear.purchases==="object"?S.gear.purchases:{};
  if(S.gear.armor&&!ARMORS.some(a=>a.n===S.gear.armor)){warn.push(`護甲「${S.gear.armor}」已不存在`);S.gear.armor=""}
  if(!S.gear.armor&&S.gear.unarmored==="none"&&(o.v||0)<5)S.gear.unarmored="auto";
  S.gear.weapons=(S.gear.weapons||[]).filter(n=>{const k=WEAPONS.some(w=>w[1]===n);if(!k)warn.push(`武器「${n}」已不存在`);return k});
@@ -4921,7 +4961,7 @@ function resetState(){
  S.skills=new Set();S.level=1;S.sub=null;S.classLevels={};S.classSubs={};S.spellByClass={};S.asiByClass={};S.startGear14={};S.classChoices14={};S.hpMode="avg";S.hpRolls={};S.hpRollsByClass={};
  S.asi={};S.boon="";S.boonAb="";S.style="";S.mastery=new Set();S.primalSkill="";
  S.cantrips=new Set();S.spellbook=new Set();S.prepared=new Set();S.customSpells=[];S.slotsUsed={};S.spChoices={};S.bgChoices14={};
- S.gear={armor:"",unarmored:"auto",shield:false,weapons:[],miscAC:0,miscLabel:"",items:"",gold:{pp:0,gp:0,sp:0,cp:0}};S.showAC=false;S.portrait="";
+ S.gear={armor:"",unarmored:"auto",shield:false,weapons:[],miscAC:0,miscLabel:"",items:"",gold:{pp:0,gp:0,sp:0,cp:0},purchases:{}};S.showAC=false;S.portrait="";
  S.bio={look:"",traits:"",story:"",allies:"",notes:""};
  S.play={hp:null,hpMax:null,thp:0,hd:null,ds:{s:0,f:0},insp:false,res:{},resMax:{},custom:[],notes:""};
  S.id=newId();
@@ -5108,6 +5148,25 @@ document.addEventListener("mouseout",e=>{
  if(e.target.closest&&e.target.closest(".sref"))spellTip.style.display="none";
 });
 window.addEventListener("scroll",()=>{spellTip.style.display="none"},true);
+
+/* 通用旁註使用 fixed 浮層，避免被橫向捲動的表格裁切或推到表格外。 */
+const featureTip=document.createElement("div");
+featureTip.id="featureTip";
+document.body.appendChild(featureTip);
+function placeFeatureTip(target){
+ featureTip.textContent=target.dataset.tip||"";
+ if(!featureTip.textContent)return;
+ featureTip.style.display="block";
+ const r=target.getBoundingClientRect(),tw=featureTip.offsetWidth,th=featureTip.offsetHeight;
+ const x=Math.min(Math.max(8,r.left+r.width/2-tw/2),window.innerWidth-tw-8);
+ let y=r.top-th-9;if(y<8)y=Math.min(window.innerHeight-th-8,r.bottom+9);
+ featureTip.style.left=x+"px";featureTip.style.top=Math.max(8,y)+"px";
+}
+document.addEventListener("mouseover",e=>{const t=e.target.closest?.(".ft[data-tip]");if(t)placeFeatureTip(t)});
+document.addEventListener("mouseout",e=>{if(e.target.closest?.(".ft[data-tip]"))featureTip.style.display="none"});
+document.addEventListener("focusin",e=>{const t=e.target.closest?.(".ft[data-tip]");if(t)placeFeatureTip(t)});
+document.addEventListener("focusout",e=>{if(e.target.closest?.(".ft[data-tip]"))featureTip.style.display="none"});
+window.addEventListener("scroll",()=>{featureTip.style.display="none"},true);
 
 /* ============ 速查頁 ============ */
 let refTab="weapon";
@@ -5326,6 +5385,7 @@ function renderFinal(){
  </div>`;
 
  el.innerHTML=html;
+ el.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(+b.dataset.go));
  el.querySelectorAll("[data-bio]").forEach(ta=>ta.oninput=()=>{
    if(ta.dataset.bio==="gearItems")S.gear.items=ta.value;
    else S.bio[ta.dataset.bio]=ta.value;
@@ -5357,6 +5417,7 @@ function renderFinal(){
  const acChk=$("acChk");
  if(acChk)acChk.onchange=()=>{S.showAC=acChk.checked;renderFinal()};
  const g=S.gear;
+ const takeBg=$("takeBgGear24");if(takeBg)takeBg.onclick=applyBgGear24;
  el.querySelectorAll("[data-sg14]").forEach(sel=>sel.onchange=()=>{S.startGear14[sel.dataset.sg14]=+sel.value;renderFinal();autoSave()});
  const asel=$("armorSel");
  if(asel)asel.onchange=()=>{
