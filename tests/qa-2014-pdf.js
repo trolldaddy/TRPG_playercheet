@@ -1,6 +1,7 @@
 const { chromium } = require("playwright");
 const path = require("path");
 const fs = require("fs");
+const PDFLib = require(path.resolve("assets/vendor/pdf-lib.min.js"));
 
 const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
 const outputDir = path.resolve(process.env.QA_PDF_DIR || "tmp/pdfs");
@@ -25,7 +26,14 @@ const outputDir = path.resolve(process.env.QA_PDF_DIR || "tmp/pdfs");
     const downloadPromise = page.waitForEvent("download");
     await page.evaluate(() => exportOfficialCharacterSheet());
     const download = await downloadPromise;
-    await download.saveAs(path.join(outputDir, `qa-2014-paladin-${level}.pdf`));
+    const output = path.join(outputDir, `qa-2014-paladin-${level}.pdf`);
+    await download.saveAs(output);
+    const pdf = await PDFLib.PDFDocument.load(fs.readFileSync(output));
+    const fields = pdf.getForm().getFields();
+    const names = new Set(fields.map(field => field.getName()));
+    if (fields.length !== 334 || !names.has("CharacterName") || !names.has("Features and Traits")) {
+      throw new Error(`2014 PDF form fields were not preserved at level ${level}`);
+    }
   }
   await browser.close();
   console.log(JSON.stringify({ outputDir, files: [1, 20].map(x => `qa-2014-paladin-${x}.pdf`) }));
