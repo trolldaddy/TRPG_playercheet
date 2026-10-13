@@ -32,7 +32,7 @@ const output = path.resolve("tmp/qa-2024-export.pdf");
     S.base = { str: 8, dex: 14, con: 14, int: 12, wis: 10, cha: 17 };
     S.skills = new Set(["欺瞞", "說服"]); S.gear.weapons = []; S.gear.items = "";
     document.getElementById("fName").value = "QA-2024";
-    window.PDF_EXPORT_KEEP_FORM = true; update();
+    update();
   });
   const downloadPromise = page.waitForEvent("download");
   await page.evaluate(() => exportOfficialCharacterSheet());
@@ -41,6 +41,7 @@ const output = path.resolve("tmp/qa-2024-export.pdf");
 
   const doc = await PDFLib.PDFDocument.load(fs.readFileSync(output));
   const form = doc.getForm();
+  if (form.getFields().length !== 409) throw new Error("2024 PDF form fields were not preserved");
   const get = name => form.getTextField(name).getText() || "";
   const feat = get("feat-trat"), tool = get("tool_pro"), species = get("speice-trat"), cls = get("class-a-1");
   for (const expected of ["背景起源專長", "幸運", "額外起源專長", "警覺", "4級專長", "戰鬥施法者"]) if (!feat.includes(expected)) throw new Error(`missing feat export: ${expected}`);
