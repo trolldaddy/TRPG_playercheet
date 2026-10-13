@@ -34,6 +34,15 @@ const outputDir = path.resolve(process.env.QA_PDF_DIR || "tmp/pdfs");
     if (fields.length !== 334 || !names.has("CharacterName") || !names.has("Features and Traits")) {
       throw new Error(`2014 PDF form fields were not preserved at level ${level}`);
     }
+    const form = pdf.getForm();
+    const get = name => form.getTextField(name).getText() || "";
+    if (get("Wpn Name") !== "長劍(揮砍)" || /揮砍/.test(get("Wpn1 Damage"))) {
+      throw new Error(`2014 weapon damage type placement is incorrect at level ${level}`);
+    }
+    if (get("GP") !== "50" || /25\s*gp/i.test(get("Equipment"))) {
+      throw new Error(`2014 background money placement is incorrect at level ${level}`);
+    }
+    if (get("Treasure") !== "") throw new Error(`2014 treasure must start empty at level ${level}`);
   }
   await browser.close();
   console.log(JSON.stringify({ outputDir, files: [1, 20].map(x => `qa-2014-paladin-${x}.pdf`) }));
