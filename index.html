@@ -325,6 +325,16 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
 /* ══ 跑團狀態 ══ */
 .play-box{background:#f8f3e2;border:1px solid var(--line-soft);padding:13px 15px;margin-bottom:12px}
 .play-box .pt{font-weight:700;font-size:11.5px;letter-spacing:.18em;color:var(--gold);margin-bottom:9px;border-bottom:1px solid var(--line-soft);padding-bottom:4px}
+.start-gear-builder{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:14px}
+.start-gear-mode{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+.start-gear-mode button,.gear-choice-tabs button{border:1px solid var(--line-soft);background:#f8f3e2;color:var(--ink);padding:7px 13px}
+.start-gear-mode button.active,.gear-choice-tabs button.active{background:var(--gold);color:#fff}
+.gear-choice-row{background:#f8f3e2;border:1px solid var(--line-soft);padding:10px 12px;margin:8px 0}
+.gear-choice-row .gear-choice-title{font-size:12px;color:var(--gold);letter-spacing:.08em;margin-bottom:7px}
+.gear-choice-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.gear-choice-detail{font-size:13px;line-height:1.65}
+.gear-choice-detail select{margin:4px 7px 4px 0;max-width:250px}
+.pack-preview{margin-top:7px;padding:8px 10px;border-left:3px solid var(--blue);background:#f2ecd8;color:var(--muted);font-size:12.5px}
 .hp-row{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
 .hp-big{font-size:clamp(26px,2.2vw,32px);font-weight:700;font-family:var(--serif);min-width:104px;color:var(--lapis)}
 .hp-big small{font-size:14px;color:var(--gold-dim);font-weight:400}
@@ -2932,6 +2942,7 @@ const START_GEAR_2014={
  邪術師:{groups:[["輕弩與 20 支弩矢","任一簡易武器"],["材料包","奧術法器"],["學者套組","地城探索者套組"]],fixed:"皮甲、任一簡易武器、兩把匕首"},
  法師:{groups:[["長棍","匕首"],["材料包","奧術法器"],["學者套組","探索套組"]],fixed:"法術書"}
 };
+const START_GOLD_2014={野蠻人:[2,10],吟遊詩人:[5,10],牧師:[5,10],德魯伊:[2,10],戰士:[5,10],武僧:[5,1],聖武士:[5,10],遊俠:[5,10],遊蕩者:[4,10],術士:[3,10],邪術師:[4,10],法師:[4,10]};
 const EQUIPMENT_PACKS_2014={
  外交官套組:"箱子、2 個地圖或卷軸匣、精美服裝、墨水、羽毛筆、油燈、2 瓶油、5 張紙、香水、封蠟、肥皂",
  藝人套組:"背包、睡袋、2 套戲服、5 根蠟燭、5 日口糧、水袋、易容工具",
@@ -2941,7 +2952,20 @@ const EQUIPMENT_PACKS_2014={
  學者套組:"背包、學識書籍、墨水、羽毛筆、10 張羊皮紙、一小袋沙、小刀",
  竊賊套組:"背包、1,000 顆滾珠、10 尺細繩、鈴鐺、5 根蠟燭、撬棍、鐵鎚、10 根岩釘、罩燈、2 瓶油、5 日口糧、火絨盒、水袋、50 尺麻繩"
 };
-function startingGearText2014(){const d=START_GEAR_2014[S.cls?.n],p=S.startGear14||{};if(!d)return "";return [...d.groups.map((g,i)=>g[p[i]??0]),d.fixed].filter(Boolean).join("、")}
+function startGearMode2014(){return S.startGear14?.mode||"kit"}
+function genericWeaponSpec2014(option){const phrase=["兩件簡易近戰武器","兩件軍用武器","一件軍用武器","任一軍用近戰武器","任一簡易近戰武器","任一簡易武器"].find(x=>String(option||"").includes(x));if(!phrase)return null;return {phrase,count:phrase.startsWith("兩")?2:1,tier:phrase.includes("軍用")?"軍用":"簡易",melee:phrase.includes("近戰")}}
+function weaponOptions2014(spec){return WEAPONS.filter(w=>w[0].startsWith(spec.tier)&&(!spec.melee||w[0].includes("近戰"))).map(w=>w[1])}
+function resolvedStartOption2014(option,key){const spec=genericWeaponSpec2014(option);if(!spec)return option;const picks=Array.from({length:spec.count},(_,i)=>S.startGear14?.[`wp_${key}_${i}`]).filter(Boolean);if(picks.length<spec.count)return option;return String(option).replace(spec.phrase,picks.join("、"))}
+function startingGearText2014(){const d=START_GEAR_2014[S.cls?.n],p=S.startGear14||{};if(!d||startGearMode2014()==="gold")return "";return [...d.groups.map((g,i)=>resolvedStartOption2014(g[p[i]??0],i)),resolvedStartOption2014(d.fixed,"fixed")].filter(Boolean).join("、")}
+function startingWeapons2014(){const raw=startingGearText2014();return [...new Set(WEAPONS.map(w=>w[1]).sort((a,b)=>b.length-a.length).filter(n=>raw.includes(n)))]}
+function startingGoldFormula2014(){const [dice,mult]=START_GOLD_2014[S.cls?.n]||[0,1];return `${dice}d4${mult===1?"":` × ${mult}`}`}
+function setStartGearMode2014(mode){const p=S.startGear14||(S.startGear14={}),old=+p.goldApplied||0;if(mode==="kit"&&old){setMoneyCp(Math.max(0,moneyCp()-old*100));p.goldApplied=0;p.goldGp=0}p.mode=mode;renderClasses();update();autoSave()}
+function rollStartingGold2014(){const p=S.startGear14||(S.startGear14={}),[dice,mult]=START_GOLD_2014[S.cls?.n]||[0,1],old=+p.goldApplied||0,total=Array.from({length:dice},()=>1+Math.floor(Math.random()*4)).reduce((a,b)=>a+b,0)*mult;setMoneyCp(Math.max(0,moneyCp()-old*100)+total*100);p.goldGp=total;p.goldApplied=total;p.mode="gold";renderClasses();update();autoSave();toast(`起始金錢：${total} gp`)}
+function resetClassStartingGear2014(){const old=+S.startGear14?.goldApplied||0;if(old)setMoneyCp(Math.max(0,moneyCp()-old*100));S.startGear14={mode:"kit"}}
+function startGearWeaponSelectors2014(option,key){const spec=genericWeaponSpec2014(option);if(!spec)return "";const opts=weaponOptions2014(spec);return `<div>${Array.from({length:spec.count},(_,i)=>`<label>${spec.count>1?`武器 ${i+1}`:"選擇武器"} <select data-sg14-weapon="${key}" data-slot="${i}"><option value="">— 選擇 —</option>${opts.map(n=>`<option value="${n}"${S.startGear14?.[`wp_${key}_${i}`]===n?" selected":""}>${n}</option>`).join("")}</select></label>`).join("")}</div>`}
+function startGearPackPreview2014(option){const packs=Object.entries(EQUIPMENT_PACKS_2014).filter(([n])=>String(option||"").includes(n));return packs.map(([n,v])=>`<div class="pack-preview"><b>${n}</b>：${v}</div>`).join("")}
+function startingGearReady2014(){if(S.ruleset!=="2014"||!S.cls)return true;if(startGearMode2014()==="gold")return (+S.startGear14?.goldGp||0)>0;const d=START_GEAR_2014[S.cls.n],p=S.startGear14||{},ready=(option,key)=>{const spec=genericWeaponSpec2014(option);return !spec||Array.from({length:spec.count},(_,i)=>p[`wp_${key}_${i}`]).every(Boolean)};return d.groups.every((g,i)=>ready(g[p[i]??0],i))&&ready(d.fixed,"fixed")}
+function renderStartingGear2014(){if(S.ruleset!=="2014"||!S.cls)return "";const d=START_GEAR_2014[S.cls.n],p=S.startGear14||(S.startGear14={mode:"kit"}),mode=startGearMode2014(),[dice,mult]=START_GOLD_2014[S.cls.n]||[0,1];return `<div class="start-gear-builder"><div class="row"><span class="label">起始裝備</span><b>選擇取得方式</b></div><div class="start-gear-mode"><button type="button" data-start-mode="kit" class="${mode==="kit"?"active":""}">領取起始套裝</button><button type="button" data-start-mode="gold" class="${mode==="gold"?"active":""}">全部改領起始金錢</button></div>${mode==="kit"?`${d.groups.map((opts,i)=>{const chosen=+(p[i]??0),option=opts[chosen];return `<div class="gear-choice-row"><div class="gear-choice-title">第 ${i+1} 項</div><div class="gear-choice-tabs">${opts.map((x,j)=>`<button type="button" data-sg14-choice="${i}" data-choice="${j}" class="${j===chosen?"active":""}">${String.fromCharCode(65+j)}．${x}</button>`).join("")}</div><div class="gear-choice-detail"><b>目前選擇：</b>${resolvedStartOption2014(option,i)}${startGearWeaponSelectors2014(option,i)}${startGearPackPreview2014(option)}</div></div>`}).join("")}<div class="gear-choice-row"><div class="gear-choice-title">固定取得</div><div class="gear-choice-detail">${resolvedStartOption2014(d.fixed,"fixed")||"無"}${startGearWeaponSelectors2014(d.fixed,"fixed")}${startGearPackPreview2014(d.fixed)}</div></div><div class="row"><span class="label">目前取得</span>${startingGearText2014()}</div>`:`<div class="gear-choice-row"><div class="gear-choice-detail">本職業起始金錢：<b>${dice}d4${mult===1?"":` × ${mult}`} gp</b><br>${p.goldGp!=null&&p.goldGp!==0?`目前擲得：<b>${p.goldGp} gp</b>`:"尚未擲骰。擲出後會加入角色金錢，可直接到購物頁購買裝備。"}<div style="margin-top:8px"><button type="button" id="rollStartGold14">${p.goldGp?"重新擲起始金錢":"擲起始金錢"}</button></div></div></div>`}</div>`}
 function expandedStartingGear2014(){const raw=startingGearText2014();const packs=Object.entries(EQUIPMENT_PACKS_2014).filter(([n])=>raw.includes(n)).map(([n,v])=>`${n}：${v}`);return {raw,packs}}
 
 /* 護甲與武器熟練判定 */
@@ -3395,7 +3419,7 @@ function renderClasses(){
    const b=document.createElement("button");
    b.className="pick-card"+(S.cls===c?" selected":"");
    b.innerHTML=`<div class="name">${c.n}</div><div class="tag">d${c.hd} · 主屬性:${c.pri}</div><div class="desc">${c.desc}</div>`;
-   b.onclick=()=>{S.cls=c;S.classLevels={[c.n]:1};S.classSubs={};S.spellByClass={};S.asiByClass={};S.startGear14={};S.classChoices14={};S.level=1;S.skills.clear();S.sub=null;S.asi={};S.hpRolls={};S.hpRollsByClass={};S.boon="";S.boonAb="";S.style="";S.mastery=new Set();S.primalSkill="";S.cantrips=new Set();S.spellbook=new Set();S.prepared=new Set();S.slotsUsed={};S.metamagic=new Set();S.invocations=new Set();S.expertise=new Set();S.divineOrder="";S.primalOrder="";S.blessed="";S.efury="";Object.keys(S.featSpells).forEach(k=>{if(k.startsWith("asi"))delete S.featSpells[k]});renderClasses();update()};
+   b.onclick=()=>{resetClassStartingGear2014();S.cls=c;S.classLevels={[c.n]:1};S.classSubs={};S.spellByClass={};S.asiByClass={};S.startGear14={mode:"kit"};S.classChoices14={};S.level=1;S.skills.clear();S.sub=null;S.asi={};S.hpRolls={};S.hpRollsByClass={};S.boon="";S.boonAb="";S.style="";S.mastery=new Set();S.primalSkill="";S.cantrips=new Set();S.spellbook=new Set();S.prepared=new Set();S.slotsUsed={};S.metamagic=new Set();S.invocations=new Set();S.expertise=new Set();S.divineOrder="";S.primalOrder="";S.blessed="";S.efury="";Object.keys(S.featSpells).forEach(k=>{if(k.startsWith("asi"))delete S.featSpells[k]});renderClasses();update();autoSave()};
    g.appendChild(b);
  });
  const d=$("classDetail");
@@ -3405,9 +3429,13 @@ function renderClasses(){
    <div class="row"><span class="label">豁免熟練</span><b>${S.cls.saves.map(k=>ABN[k]).join("、")}</b></div>
    <div class="row"><span class="label">護甲訓練</span>${S.cls.armor}</div>
    <div class="row"><span class="label">武器熟練</span>${S.cls.weapon}</div>
-   <div class="row"><span class="label">技能</span>從職業列表中任選 <b>${S.cls.skc}</b> 項${S.cls.caster?`</div><div class="row"><span class="label">施法屬性</span><b>${S.cls.caster}</b>`:""}</div>`;
+   <div class="row"><span class="label">技能</span>從職業列表中任選 <b>${S.cls.skc}</b> 項${S.cls.caster?`</div><div class="row"><span class="label">施法屬性</span><b>${S.cls.caster}</b>`:""}</div>${renderStartingGear2014()}`;
  }else d.hidden=true;
- $("next0").disabled=!S.cls;
+ d.querySelectorAll("[data-start-mode]").forEach(btn=>btn.onclick=()=>setStartGearMode2014(btn.dataset.startMode));
+ d.querySelectorAll("[data-sg14-choice]").forEach(btn=>btn.onclick=()=>{const i=btn.dataset.sg14Choice;S.startGear14[i]=+btn.dataset.choice;Object.keys(S.startGear14).filter(k=>k.startsWith(`wp_${i}_`)).forEach(k=>delete S.startGear14[k]);renderClasses();update();autoSave()});
+ d.querySelectorAll("[data-sg14-weapon]").forEach(sel=>sel.onchange=()=>{S.startGear14[`wp_${sel.dataset.sg14Weapon}_${sel.dataset.slot}`]=sel.value;renderClasses();update();autoSave()});
+ const rollGold=$("rollStartGold14");if(rollGold)rollGold.onclick=rollStartingGold2014;
+ $("next0").disabled=!S.cls||!startingGearReady2014();
 }
 
 /* ============ 第2步:起源 ============ */
@@ -4578,10 +4606,7 @@ function gearPanel(){
  if(!S.cls)return "";
  const g=S.gear, ap=armorProf();
  let h=`<div class="fs-sec" style="grid-column:1/-1"><div class="st">裝備</div>`;
- if(S.ruleset==="2014"){
-   const sg=START_GEAR_2014[S.cls.n];
-   h+=`<div class="play-box"><div class="pt">PHB 2014 初始裝備</div>${sg.groups.map((opts,i)=>`<label style="display:inline-block;margin:4px 8px 4px 0">選項 ${String.fromCharCode(65+i)} <select data-sg14="${i}">${opts.map((x,j)=>`<option value="${j}"${+(S.startGear14[i]??0)===j?" selected":""}>${x}</option>`).join("")}</select></label>`).join("")}<div style="font-size:12.5px;color:var(--muted);margin-top:6px"><b>目前取得：</b>${startingGearText2014()}</div><div style="font-size:11.5px;color:var(--muted);margin-top:4px">兼職不會再次獲得該職業的初始裝備；背景裝備請依所選背景一併記錄。</div></div>`;
- }
+ if(S.ruleset==="2014")h+=`<div class="play-box"><div class="pt">PHB 2014 初始裝備</div><div style="font-size:12.5px;line-height:1.7">${startGearMode2014()==="gold"?`已選擇全部起始金錢${S.startGear14?.goldGp?`：${S.startGear14.goldGp} gp`:"（尚未擲骰）"}`:`已在職業頁選擇起始套裝：${startingGearText2014()}`}</div><button type="button" data-go="0" style="margin-top:7px">返回職業頁調整</button></div>`;
  else if(S.bg&&BG_GEAR_2024[S.bg.n]){const bgp=BG_GEAR_2024[S.bg.n];h+=`<div class="play-box"><div class="pt">2024 背景起始裝備 · ${S.bg.n}</div><div style="font-size:12.5px;line-height:1.7">${bgp.items}${bgp.weapons?.length?`、${bgp.weapons.join("、")}`:""}、${bgp.gp} gp</div><button type="button" id="takeBgGear24" style="margin-top:7px"${g.bgPackage24?" disabled":""}>${g.bgPackage24?`已領取「${g.bgPackage24}」背景裝備`:"領取背景裝備與剩餘金錢"}</button></div>`}
  /* 護甲 */
  const un=unarmoredOptions();
@@ -5453,7 +5478,7 @@ function renderFinal(){
  if(acChk)acChk.onchange=()=>{S.showAC=acChk.checked;renderFinal()};
  const g=S.gear;
  const takeBg=$("takeBgGear24");if(takeBg)takeBg.onclick=applyBgGear24;
- el.querySelectorAll("[data-sg14]").forEach(sel=>sel.onchange=()=>{S.startGear14[sel.dataset.sg14]=+sel.value;renderFinal();autoSave()});
+ el.querySelectorAll("[data-go]").forEach(btn=>btn.onclick=()=>go(+btn.dataset.go));
  const asel=$("armorSel");
  if(asel)asel.onchange=()=>{
    const v=asel.value;
