@@ -23,11 +23,13 @@ const expectedGold = { 野蠻人:75, 吟遊詩人:90, 牧師:110, 德魯伊:50, 
     S.cls = CLASSES.find(x => x.n === "戰士"); S.classLevels = { 戰士:1 }; S.startGear24 = {}; S.gear.gold = { pp:0, gp:0, sp:0, cp:0 }; renderClasses();
     chooseStartingGear2024(0); renderClasses();
     S.bg = BACKGROUNDS_2024.find(x => x.n === "罪犯"); S.bgGear24 = {}; renderOrigin(); chooseBackgroundGear2024("kit");
+    S.languages24 = ["精靈語", "通用手語"]; renderOrigin();
     const backgroundKit = { ready: backgroundGearReady2024(), gp: S.bgGear24.goldApplied, text: backgroundGearText2024() };
     chooseBackgroundGear2024("gold");
     const backgroundGold = { ready: backgroundGearReady2024(), gp: S.bgGear24.goldApplied };
+    S.play.hd=1;const oldLevel=S.level;S.level=3;ensureClassLevels();syncRemainingHitDice(oldLevel);const hitDice={remaining:S.play.hd,classLevel:S.classLevels[S.cls.n],level:S.level};
     document.getElementById("rulesetModal")?.classList.remove("open");
-    return { classes, backgroundKit, backgroundGold, viewport: innerWidth, scrollWidth: document.documentElement.scrollWidth };
+    return { classes, backgroundKit, backgroundGold, hitDice, languages:{ready:languagesReady2024(),text:proficiencySummary14().languages,selects:document.querySelectorAll("[data-lang24]").length}, viewport: innerWidth, scrollWidth: document.documentElement.scrollWidth };
   }, expectedGold);
   for (const [name, row] of Object.entries(result.classes)) {
     assert(row.kit.ready && row.kit.text, `${name} package is incomplete`);
@@ -35,6 +37,8 @@ const expectedGold = { 野蠻人:75, 吟遊詩人:90, 牧師:110, 德魯伊:50, 
   }
   assert(result.backgroundKit.ready && result.backgroundKit.text.includes("盜賊工具"));
   assert.deepEqual(result.backgroundGold, { ready:true, gp:50 });
+  assert.deepEqual(result.hitDice, { remaining:3, classLevel:3, level:3 });
+  assert(result.languages.ready && result.languages.selects === 2 && result.languages.text.includes("通用手語"));
   assert(result.scrollWidth <= result.viewport + 1, `mobile horizontal overflow: ${result.scrollWidth}/${result.viewport}`);
   await browser.close();
   console.log(JSON.stringify({ classes:Object.keys(result.classes).length, background:"ok", mobile:`${result.scrollWidth}/${result.viewport}` }));
