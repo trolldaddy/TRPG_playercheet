@@ -1,0 +1,12 @@
+const fs=require("fs"),vm=require("vm"),assert=require("assert");
+const context={window:{}};vm.createContext(context);vm.runInContext(fs.readFileSync("assets/state/character-state.js","utf8"),context);
+const api=context.window.DND_STATE,classes=[{n:"戰士",hd:10},{n:"法師",hd:6},{n:"遊俠",hd:10}];
+const state={ruleset:"2014",cls:classes[0],level:1,classLevels:{戰士:1},play:{hd:null,hdByClass:null}};
+api.normalizeClassProgress(state,classes);let pools=api.syncHitDice(state,classes);assert.deepStrictEqual(JSON.parse(JSON.stringify(pools)),{戰士:{die:10,max:1}});assert.strictEqual(state.play.hd,1);
+const before=api.hitDicePools(state,classes);state.classLevels.戰士=2;api.normalizeClassProgress(state,classes);api.syncHitDice(state,classes,before);assert.strictEqual(state.play.hdByClass.戰士,2,"升級應增加一枚可用生命骰");
+api.changeHitDie(state,classes,"戰士",-1);assert.strictEqual(state.play.hdByClass.戰士,1);
+const beforeMulti=api.hitDicePools(state,classes);state.classLevels.法師=1;api.normalizeClassProgress(state,classes);api.syncHitDice(state,classes,beforeMulti);assert.deepStrictEqual(JSON.parse(JSON.stringify(state.play.hdByClass)),{戰士:1,法師:1},"新增兼職應建立正確骰種與數量");
+const beforeRemove=api.hitDicePools(state,classes);delete state.classLevels.法師;api.normalizeClassProgress(state,classes);api.syncHitDice(state,classes,beforeRemove);assert.deepStrictEqual(JSON.parse(JSON.stringify(state.play.hdByClass)),{戰士:1},"移除兼職應移除生命骰池");
+const legacy={ruleset:"2024",cls:classes[2],level:5,classLevels:{},play:{hd:3}};api.normalizeClassProgress(legacy,classes);api.syncHitDice(legacy,classes);assert.deepStrictEqual(JSON.parse(JSON.stringify(legacy.play.hdByClass)),{遊俠:3},"舊版單一生命骰存檔應可遷移");
+const overflow={ruleset:"2014",cls:classes[0],level:25,classLevels:{戰士:10,法師:10,遊俠:5},play:{}};api.normalizeClassProgress(overflow,classes);assert.strictEqual(overflow.level,20);assert.strictEqual(Object.values(overflow.classLevels).reduce((a,b)=>a+b,0),20);
+console.log(JSON.stringify({status:"ok",pools:state.play.hdByClass,legacy:legacy.play.hdByClass}));
