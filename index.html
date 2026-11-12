@@ -808,8 +808,11 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
 
 <script src="assets/vendor/pdf-lib.min.js"></script>
 <script src="assets/vendor/fontkit.umd.min.js"></script>
+<script src="assets/data/rules-equipment.js"></script>
 <script>
 /* ============ 資料 ============ */
+if(!window.DND_DATA)throw new Error("規則與裝備資料載入失敗");
+const {LANGUAGES_2014,LANGUAGES_2024,GAMING_2014,INSTRUMENTS_2014,ARTISAN_BG_2014,BG14_DETAILS,SHOP_WEAPON_PRICE,SHOP_TOOLS,BG_GEAR_2024,START_GEAR_2024,SHOP_GEAR,START_GEAR_2014,START_GOLD_2014,EQUIPMENT_PACKS_2014}=window.DND_DATA;
 const ABILITIES=[
  {k:"str",n:"力量"},{k:"dex",n:"敏捷"},{k:"con",n:"體質"},
  {k:"int",n:"智力"},{k:"wis",n:"感知"},{k:"cha",n:"魅力"}
@@ -906,22 +909,6 @@ const BACKGROUNDS_2014=[
  {n:"士兵",sk:["運動","威嚇"],tool:"一種賭具、載具（陸地）",feature:"軍階",desc:"曾在軍隊或傭兵團服役。"},
  {n:"流浪兒",sk:["巧手","隱匿"],tool:"易容工具、盜賊工具",feature:"城市祕徑",desc:"在城市街頭獨力求生。"}
 ];
-const LANGUAGES_2014=["矮人語","精靈語","巨人語","侏儒語","哥布林語","半身人語","獸人語","深淵語","天界語","龍語","深層語","煉獄語","原初語","木族語","地底通用語"];
-const LANGUAGES_2024=["通用手語","龍語","矮人語","精靈語","巨人語","侏儒語","哥布林語","半身人語","獸人語"];
-const GAMING_2014=["骰子組","龍棋組","撲克牌組","三龍牌組"];
-const INSTRUMENTS_2014=["風笛","鼓","揚琴","長笛","魯特琴","里拉琴","號角","排笛","蘆笛","提琴"];
-const ARTISAN_BG_2014=["煉金工具","釀酒工具","書法工具","木匠工具","製圖工具","鞋匠工具","廚具","玻璃工具","珠寶工具","皮匠工具","石工工具","繪畫工具","陶匠工具","鐵匠工具","修補工具","織布工具","木雕工具"];
-const BG14_DETAILS={
- 侍僧:{gear:"聖徽、祈禱書或祈禱輪、5 炷香、法衣、普通服裝、腰包（15 gp）",choices:[{k:"lang1",l:"語言一",o:LANGUAGES_2014},{k:"lang2",l:"語言二",o:LANGUAGES_2014}]},
- 江湖騙子:{gear:"精美服裝、易容工具、選定騙局所需工具、腰包（15 gp）",choices:[]},罪犯:{gear:"撬棍、深色帶兜帽普通服裝、腰包（15 gp）",choices:[{k:"game",l:"賭具",o:GAMING_2014}]},
- 藝人:{gear:"一種樂器、仰慕者的信物、表演服裝、腰包（15 gp）",choices:[{k:"instrument",l:"樂器",o:INSTRUMENTS_2014}]},
- 平民英雄:{gear:"一套工匠工具、鏟子、鐵鍋、普通服裝、腰包（10 gp）",choices:[{k:"artisan",l:"工匠工具",o:ARTISAN_BG_2014}]},
- 公會工匠:{gear:"一套工匠工具、公會介紹信、旅行服裝、腰包（15 gp）",choices:[{k:"artisan",l:"工匠工具",o:ARTISAN_BG_2014},{k:"lang1",l:"語言",o:LANGUAGES_2014}]},
- 隱士:{gear:"卷軸匣、冬毯、普通服裝、草藥工具、5 gp",choices:[{k:"lang1",l:"語言",o:LANGUAGES_2014}]},貴族:{gear:"精美服裝、圖章戒指、家譜卷軸、錢包（25 gp）",choices:[{k:"game",l:"賭具",o:GAMING_2014},{k:"lang1",l:"語言",o:LANGUAGES_2014}]},
- 化外之民:{gear:"木杖、狩獵陷阱、獵物戰利品、旅行服裝、腰包（10 gp）",choices:[{k:"instrument",l:"樂器",o:INSTRUMENTS_2014},{k:"lang1",l:"語言",o:LANGUAGES_2014}]},
- 賢者:{gear:"墨水、羽毛筆、小刀、死者來信、普通服裝、腰包（10 gp）",choices:[{k:"lang1",l:"語言一",o:LANGUAGES_2014},{k:"lang2",l:"語言二",o:LANGUAGES_2014}]},
- 水手:{gear:"繫船鉤、50 尺絲繩、幸運符、普通服裝、腰包（10 gp）",choices:[]},士兵:{gear:"軍階徽記、敵人戰利品、骨骰或牌組、普通服裝、腰包（10 gp）",choices:[{k:"game",l:"賭具",o:GAMING_2014}]},流浪兒:{gear:"小刀、故鄉城市地圖、寵物鼠、父母信物、普通服裝、腰包（10 gp）",choices:[]}
-};
 const SPECIES_2014=[
  {n:"人類",size:"中型",speed:30,ab:{str:1,dex:1,con:1,int:1,wis:1,cha:1},traits:["所有屬性值各 +1","額外語言"],desc:"適應力強且分布廣泛的族群。"},
  {n:"人類（變體）",size:"中型",speed:30,ab:{},traits:["任選兩項不同屬性各 +1","任選一項技能熟練","任選一項專長","額外語言"],desc:"PHB 2014 選用規則的人類變體。",ch:[{k:"flex1",t:"ability",label:"任選屬性 +1（之一）"},{k:"flex2",t:"ability",label:"任選屬性 +1（之二）"},{k:"hSkill",t:"skill",label:"任選技能熟練"},{k:"hFeat",t:"ofeat",label:"任選專長"}]},
@@ -2895,33 +2882,12 @@ const ARMORS=[
 ];
 const SHIELD={n:"盾牌",ac:2,w:6,gp:10};
 /* 商店價格以銅幣為最小單位；2014/2024 共用一般裝備，2024 另含火器。 */
-const SHOP_WEAPON_PRICE={棍棒:10,匕首:200,巨棒:20,手斧:500,標槍:50,輕錘:200,釘頭錘:500,木杖:20,鐮刀:100,矛:100,飛鏢:5,輕弩:2500,短弓:2500,投石索:10,戰斧:1000,連枷:1000,長柄斧:2000,巨斧:3000,巨劍:5000,戟:2000,騎槍:1000,長劍:1500,巨錘:1000,晨星:1500,長槍:500,刺劍:2500,彎刀:2500,短劍:1000,三叉戟:500,戰錘:1500,戰鎬:500,鞭:200,吹箭筒:1000,手弩:7500,重弩:5000,長弓:5000,火槍:50000,手槍:25000};
-const SHOP_TOOLS=[
- ["煉金工具",5000],["釀酒工具",200],["書法用具",1000],["木匠工具",800],["製圖工具",1500],["修鞋工具",500],["廚師工具",100],["玻璃工工具",3000],["珠寶工具",2500],["皮匠工具",500],["石匠工具",1000],["繪畫工具",1000],["陶匠工具",1000],["鐵匠工具",2000],["修補工具",5000],["織布工具",100],["木雕工具",100],["易容工具",2500],["偽造工具",1500],["草藥工具",500],["領航工具",2500],["毒藥工具",5000],["盜賊工具",2500],["骰子組合",10],["龍棋組合",100],["一種樂器",200]
-];
-const BG_GEAR_2024={
- 侍僧:{items:"書法用具、祈禱書、聖徽、10 張羊皮紙、長袍",gp:8},工匠:{items:"一種工匠工具、2 個小袋、旅行服裝",gp:32},江湖騙子:{items:"偽造工具、戲服、精美服裝",gp:15},罪犯:{items:"盜賊工具、撬棍、2 個小袋、旅行服裝",weapons:["匕首","匕首"],gp:16},藝人:{items:"一種樂器、2 套戲服、鏡子、香水、旅行服裝",gp:11},農夫:{items:"木匠工具、治療者工具包、鐵鍋、鐵鏟、旅行服裝",weapons:["鐮刀"],gp:30},衛士:{items:"骰子組合、罩燈、手銬、旅行服裝、20 支弩矢",weapons:["矛","輕弩"],gp:12},嚮導:{items:"製圖工具、睡袋、箭袋、帳篷、旅行服裝、20 支箭",weapons:["短弓"],gp:3},隱士:{items:"草藥工具、睡袋、知識書籍、油燈、3 瓶油、旅行服裝",weapons:["木杖"],gp:16},商人:{items:"領航工具、2 個小袋、旅行服裝",gp:22},貴族:{items:"龍棋組合、精美服裝、香水",gp:29},賢者:{items:"書法用具、歷史書籍、8 張羊皮紙、長袍",weapons:["木杖"],gp:8},水手:{items:"領航工具、50 尺麻繩、旅行服裝",weapons:["匕首"],gp:20},抄寫員:{items:"書法用具、精美服裝、油燈、3 瓶油、12 張羊皮紙",gp:23},士兵:{items:"骰子組合、治療者工具包、箭袋、旅行服裝、20 支箭",weapons:["矛","短弓"],gp:14},流浪兒:{items:"盜賊工具、骰子組合、睡袋、2 個小袋、旅行服裝",weapons:["匕首","匕首"],gp:16}
-};
 function resetBackgroundGear2024(){const old=+S.bgGear24?.goldApplied||0;if(old)setMoneyCp(Math.max(0,moneyCp()-old*100));S.bgGear24={choice:null,goldApplied:0}}
 function chooseBackgroundGear2024(choice){const d=BG_GEAR_2024[S.bg?.n],p=S.bgGear24||(S.bgGear24={}),old=+p.goldApplied||0,gp=choice==="kit"?d?.gp:50;if(!d)return;setMoneyCp(Math.max(0,moneyCp()-old*100)+gp*100);S.bgGear24={choice,goldApplied:gp};renderOrigin();update();autoSave()}
 function backgroundGearReady2024(){return S.ruleset!=="2024"||!S.bg||["kit","gold"].includes(S.bgGear24?.choice)}
 function backgroundGearText2024(){const d=BG_GEAR_2024[S.bg?.n];return S.bgGear24?.choice==="kit"&&d?[d.items,...(d.weapons||[])].filter(Boolean).join("、"):""}
 function languagesReady2024(){const a=(S.languages24||[]).filter(Boolean);return S.ruleset!=="2024"||(a.length===2&&new Set(a).size===2)}
 function renderLanguages2024(){if(S.ruleset!=="2024")return "";const chosen=S.languages24||[];return `<div class="start-gear-builder"><div class="row"><span class="label">語言</span><b>通用語 ＋ 任選兩種標準語言</b></div><div class="gear-choice-detail">${[0,1].map(i=>`<label style="display:inline-block;margin:4px 10px 4px 0">語言 ${i+1} <select data-lang24="${i}"><option value="">— 選擇 —</option>${LANGUAGES_2024.filter(x=>x===chosen[i]||!chosen.includes(x)).map(x=>`<option value="${x}"${chosen[i]===x?" selected":""}>${x}</option>`).join("")}</select></label>`).join("")}</div></div>`}
-const START_GEAR_2024={
- 野蠻人:[{items:"巨斧、4 把手斧、探索套組",gp:15},{gp:75}],
- 吟遊詩人:[{items:"皮甲、2 把匕首、你選擇的樂器、藝人套組",gp:19,choice:"instrument"},{gp:90}],
- 牧師:[{items:"鍊甲、盾牌、釘頭錘、聖徽、祭司套組",gp:7},{gp:110}],
- 德魯伊:[{items:"皮甲、盾牌、鐮刀、德魯伊法器（權杖）、探索套組、草藥工具",gp:9},{gp:50}],
- 戰士:[{items:"鍊甲、巨劍、連枷、8 支標槍、地城探索者套組",gp:4},{items:"鑲釘皮甲、彎刀、短劍、長弓、20 支箭、箭袋、地城探索者套組",gp:11},{gp:155}],
- 武僧:[{items:"矛、5 把匕首、你選擇的工匠工具或樂器、探索套組",gp:11,choice:"monkTool"},{gp:50}],
- 聖武士:[{items:"鍊甲、盾牌、長劍、6 支標槍、聖徽、祭司套組",gp:9},{gp:150}],
- 遊俠:[{items:"鑲釘皮甲、彎刀、短劍、長弓、20 支箭、箭袋、德魯伊法器（槲寄生枝）、探索套組",gp:7},{gp:150}],
- 遊蕩者:[{items:"皮甲、2 把匕首、短劍、短弓、20 支箭、箭袋、盜賊工具、竊賊套組",gp:8},{gp:100}],
- 術士:[{items:"矛、2 把匕首、奧術法器（水晶）、地城探索者套組",gp:28},{gp:50}],
- 邪術師:[{items:"皮甲、鐮刀、2 把匕首、奧術法器（寶珠）、知識書籍（神秘學）、學者套組",gp:15},{gp:100}],
- 法師:[{items:"2 把匕首、奧術法器（法杖）、長袍、法術書、學者套組",gp:5},{gp:55}]
-};
 function resetClassStartingGear2024(){const old=+S.startGear24?.goldApplied||0;if(old)setMoneyCp(Math.max(0,moneyCp()-old*100));S.startGear24={choice:null,goldApplied:0}}
 function chooseStartingGear2024(i){const d=START_GEAR_2024[S.cls?.n]?.[i],p=S.startGear24||(S.startGear24={}),old=+p.goldApplied||0;if(!d)return;setMoneyCp(Math.max(0,moneyCp()-old*100)+d.gp*100);S.startGear24={choice:i,goldApplied:d.gp,tool:""};renderClasses();update();autoSave()}
 function selectedStartingGear2024(){const i=S.startGear24?.choice;return Number.isInteger(i)?START_GEAR_2024[S.cls?.n]?.[i]:null}
@@ -2930,9 +2896,6 @@ function startingWeapons2024(){const raw=resolvedStartingGear2024();return [...n
 function startingGearReady2024(){if(S.ruleset!=="2024"||!S.cls)return true;const d=selectedStartingGear2024();return !!d&&(!d.choice||!!S.startGear24?.tool)}
 function packPreview2024(items){return Object.entries(EQUIPMENT_PACKS_2014).filter(([n])=>String(items||"").includes(n)).map(([n,v])=>`<div class="pack-preview"><b>${n}</b>：${v}</div>`).join("")}
 function renderStartingGear2024(){if(S.ruleset!=="2024"||!S.cls)return "";const opts=START_GEAR_2024[S.cls.n]||[],chosen=S.startGear24?.choice,d=selectedStartingGear2024(),toolOpts=d?.choice==="instrument"?INSTRUMENTS_2014:d?.choice==="monkTool"?[...ARTISAN_TOOLS_2014,...INSTRUMENTS_2014]:[];return `<div class="start-gear-builder"><div class="row"><span class="label">起始裝備</span><b>選擇一個方案</b></div><div class="gear-choice-row"><div class="gear-choice-tabs">${opts.map((o,i)=>`<button type="button" data-sg24-choice="${i}" class="${chosen===i?"active":""}">${String.fromCharCode(65+i)}．${o.items?"領取職業套裝":`${o.gp} GP`}</button>`).join("")}</div>${d?`<div class="gear-choice-detail">${d.items?`<b>取得：</b>${resolvedStartingGear2024()}、${d.gp} GP${d.choice?`<div><label>${d.choice==="instrument"?"選擇樂器":"選擇工匠工具或樂器"} <select data-sg24-tool><option value="">— 選擇 —</option>${toolOpts.map(n=>`<option value="${n}"${S.startGear24?.tool===n?" selected":""}>${n}</option>`).join("")}</select></label></div>`:""}${packPreview2024(d.items)}`:`取得 <b>${d.gp} GP</b>，可直接在購物頁自行購買裝備。`}</div>`:`<div class="gear-choice-detail" style="color:var(--muted)">請選擇職業套裝或起始金錢。</div>`}</div></div>`}
-const SHOP_GEAR=[
- ["背包",200],["睡袋",100],["毛毯",50],["滾珠袋",100],["鐵蒺藜袋",100],["蠟燭",1],["鐵鍊（10 尺）",500],["攀爬工具",2500],["撬棍",200],["火絨盒",50],["火把",1],["治療者工具包",500],["聖水",2500],["罩燈",500],["牛眼提燈",1000],["油（瓶）",10],["麻繩（50 尺）",100],["口糧（1 日）",50],["水袋",20],["帳篷",200],["箭（20 支）",100],["弩矢（20 支）",100],["投石索彈丸（20 顆）",4],["藥水／治療",5000],["奧術法器",500],["德魯伊法器",100],["聖徽",500],["材料包",2500],["精美服裝",1500],["旅行服裝",200],["法術書",5000]
-];
 function shopCatalog(){
  const weapons=WEAPONS.filter(w=>S.ruleset==="2024"||!["火槍","手槍"].includes(w[1])).map(w=>({id:"w:"+w[1],n:w[1],cat:"武器",cp:SHOP_WEAPON_PRICE[w[1]]||0,note:w[2]+" · "+w[3]}));
  const armor=ARMORS.map(a=>({id:"a:"+a.n,n:a.n,cat:"護甲",cp:a.gp*100,note:a.cat+" · AC "+a.ac})).concat({id:"a:盾牌",n:"盾牌",cat:"護甲",cp:1000,note:"盾牌 · AC +2"});
@@ -2957,30 +2920,6 @@ function refundShopItem(id){
  renderShop();if(S.step===7)renderFinal();update();autoSave();
 }
 function purchasedText(cat){const map=new Map(shopCatalog().map(x=>[x.id,x]));return Object.entries(shopBought()).filter(([id])=>map.get(id)?.cat===cat).map(([id,q])=>map.get(id).n+(q>1?` ×${q}`:"")).join("、")}
-const START_GEAR_2014={
- 野蠻人:{groups:[["巨斧","任一軍用近戰武器"],["兩把手斧","任一簡易武器"]],fixed:"探索套組、四支標槍"},
- 吟遊詩人:{groups:[["刺劍","長劍","任一簡易武器"],["外交官套組","藝人套組"],["魯特琴","任一樂器"]],fixed:"皮甲、匕首"},
- 牧師:{groups:[["硬頭錘","戰鎚（若熟練）"],["鱗甲","皮甲","鍊甲（若熟練）"],["輕弩與 20 支弩矢","任一簡易武器"],["祭司套組","學者套組"]],fixed:"盾牌、聖徽"},
- 德魯伊:{groups:[["木盾","任一簡易武器"],["彎刀","任一簡易近戰武器"]],fixed:"皮甲、探索套組、德魯伊法器"},
- 戰士:{groups:[["鍊甲","皮甲、長弓與 20 支箭"],["一件軍用武器與盾牌","兩件軍用武器"],["輕弩與 20 支弩矢","兩把手斧"],["地城探索者套組","探索套組"]],fixed:""},
- 武僧:{groups:[["短劍","任一簡易武器"],["地城探索者套組","探索套組"]],fixed:"十支飛鏢"},
- 聖武士:{groups:[["一件軍用武器與盾牌","兩件軍用武器"],["五支標槍","任一簡易近戰武器"],["祭司套組","探索套組"]],fixed:"鍊甲、聖徽"},
- 遊俠:{groups:[["鱗甲","皮甲"],["兩把短劍","兩件簡易近戰武器"],["地城探索者套組","探索套組"]],fixed:"長弓與 20 支箭"},
- 遊蕩者:{groups:[["刺劍","短劍"],["短弓與 20 支箭","短劍"],["竊賊套組","地城探索者套組","探索套組"]],fixed:"皮甲、兩把匕首、盜賊工具"},
- 術士:{groups:[["輕弩與 20 支弩矢","任一簡易武器"],["材料包","奧術法器"],["地城探索者套組","探索套組"]],fixed:"兩把匕首"},
- 邪術師:{groups:[["輕弩與 20 支弩矢","任一簡易武器"],["材料包","奧術法器"],["學者套組","地城探索者套組"]],fixed:"皮甲、任一簡易武器、兩把匕首"},
- 法師:{groups:[["長棍","匕首"],["材料包","奧術法器"],["學者套組","探索套組"]],fixed:"法術書"}
-};
-const START_GOLD_2014={野蠻人:[2,10],吟遊詩人:[5,10],牧師:[5,10],德魯伊:[2,10],戰士:[5,10],武僧:[5,1],聖武士:[5,10],遊俠:[5,10],遊蕩者:[4,10],術士:[3,10],邪術師:[4,10],法師:[4,10]};
-const EQUIPMENT_PACKS_2014={
- 外交官套組:"箱子、2 個地圖或卷軸匣、精美服裝、墨水、羽毛筆、油燈、2 瓶油、5 張紙、香水、封蠟、肥皂",
- 藝人套組:"背包、睡袋、2 套戲服、5 根蠟燭、5 日口糧、水袋、易容工具",
- 地城探索者套組:"背包、撬棍、鐵鎚、10 根岩釘、10 支火把、火絨盒、10 日口糧、水袋、50 尺麻繩",
- 探索套組:"背包、睡袋、炊具、火絨盒、10 支火把、10 日口糧、水袋、50 尺麻繩",
- 祭司套組:"背包、毛毯、10 根蠟燭、火絨盒、捐獻箱、2 塊薰香、香爐、法衣、2 日口糧、水袋",
- 學者套組:"背包、學識書籍、墨水、羽毛筆、10 張羊皮紙、一小袋沙、小刀",
- 竊賊套組:"背包、1,000 顆滾珠、10 尺細繩、鈴鐺、5 根蠟燭、撬棍、鐵鎚、10 根岩釘、罩燈、2 瓶油、5 日口糧、火絨盒、水袋、50 尺麻繩"
-};
 function startGearMode2014(){return S.startGear14?.mode||"kit"}
 function genericWeaponSpec2014(option){const phrase=["兩件簡易近戰武器","兩件軍用武器","一件軍用武器","任一軍用近戰武器","任一簡易近戰武器","任一簡易武器"].find(x=>String(option||"").includes(x));if(!phrase)return null;return {phrase,count:phrase.startsWith("兩")?2:1,tier:phrase.includes("軍用")?"軍用":"簡易",melee:phrase.includes("近戰")}}
 function weaponOptions2014(spec){return WEAPONS.filter(w=>w[0].startsWith(spec.tier)&&(!spec.melee||w[0].includes("近戰"))).map(w=>w[1])}
