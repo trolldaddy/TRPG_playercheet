@@ -31,8 +31,11 @@ const outputDir = path.resolve(process.env.QA_PDF_DIR || "tmp/pdfs");
     const pdf = await PDFLib.PDFDocument.load(fs.readFileSync(output));
     const fields = pdf.getForm().getFields();
     const names = new Set(fields.map(field => field.getName()));
-    if (fields.length !== 334 || !names.has("CharacterName") || !names.has("Features and Traits")) {
+    if (fields.length < 334 || !names.has("CharacterName") || !names.has("Features and Traits")) {
       throw new Error(`2014 PDF form fields were not preserved at level ${level}`);
+    }
+    if (level === 20 && !fields.some(field => field.getName().startsWith("overflow_2014_features_"))) {
+      throw new Error("2014 level 20 features should create editable continuation fields");
     }
     const form = pdf.getForm();
     const get = name => form.getTextField(name).getText() || "";
