@@ -1,13 +1,15 @@
 const { chromium } = require("playwright");
+const path = require("path");
 
-const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
+const url = process.env.QA_URL || `file:///${path.resolve("index.html").replace(/\\/g, "/")}`;
 
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: "chrome" });
   const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "networkidle" });
+  await page.goto(url, { waitUntil: url.startsWith("file:") ? "load" : "networkidle" });
+  await page.waitForTimeout(400);
   const report = await page.evaluate(() => {
-    const failures = [], counts = { classes: 0, subclasses: 0, speciesVariants: 0, speciesChoices: 0, backgrounds: 0, multiclassOrdered: 0, cartesian: 0 };
+    const failures = [], counts = { classes: 0, subclasses: 0, speciesVariants: 0, speciesChoices: 0, backgrounds: 0, multiclassOrdered: 0, cartesian: 0, subclassCartesian: 0 };
     const check = (label, fn) => { try { const result = fn(); if (result === false) throw new Error("assertion failed"); } catch (error) { failures.push(`${label}: ${error.message}`); } };
     const chooseSpecies = (sp, subrace = null) => {
       S.sp = sp; S.spChoices = {};
@@ -32,7 +34,7 @@ const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
     S.ruleset = "2014"; syncRulesetUI();
     chooseSpecies(SPECIES_2014.find(x => x.n === "人類")); chooseBackground(BACKGROUNDS_2014[0]);
 
-    for (const cls of CLASSES) for (const level of [1, 2, 3, 20]) check(`class ${cls.n} ${level}`, () => {
+    for (const cls of CLASSES) for (let level = 1; level <= 20; level++) check(`class ${cls.n} ${level}`, () => {
       chooseClass(cls, { [cls.n]: level }); counts.classes++;
       const profiles = castingProfiles2014(), casterLevel = multiclassCasterLevel();
       if (["聖武士", "遊俠"].includes(cls.n) && level === 1 && (profiles.length || casterLevel)) return false;
@@ -70,6 +72,15 @@ const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
     for (const cls of CLASSES) for (const [sp, subrace] of speciesVariants) for (const bg of BACKGROUNDS_2014) check(`matrix ${cls.n}/${sp.n}/${subrace || "base"}/${bg.n}`, () => {
       chooseClass(cls, { [cls.n]: 1 }); chooseSpecies(sp, subrace); chooseBackground(bg); counts.cartesian++;
       bonusMap(); finalScore("str"); hpTotal(); speedInfo(); proficiencySummary14(); startingGearText2014(); castingProfiles2014(); slotTracker(); return true;
+    });
+
+    for (const cls of CLASSES) for (let sub = 0; sub < (PROG_2014[cls.n]?.subs || []).length; sub++) for (const [sp, subrace] of speciesVariants) for (const bg of BACKGROUNDS_2014) check(`submatrix ${cls.n}/${sub}/${sp.n}/${subrace || "base"}/${bg.n}`, () => {
+      chooseClass(cls, { [cls.n]: 20 }); S.sub = sub; chooseSpecies(sp, subrace); chooseBackground(bg); counts.subclassCartesian++;
+      if (!subclassNameFor(cls.n)) return false;
+      bonusMap(); finalScore("str"); hpTotal(); speedInfo(); classSummary(); proficiencySummary14(); castingProfiles2014(); slotTracker(); fixedSpells2014(cls.n);
+      if (typeof DND_INVENTORY !== "undefined") DND_INVENTORY.build(S);
+      if (typeof DND_SHEET_MODEL !== "undefined") DND_SHEET_MODEL.build(S);
+      return true;
     });
 
     check("2014 has no weapon mastery", () => masteryCount() === 0);
