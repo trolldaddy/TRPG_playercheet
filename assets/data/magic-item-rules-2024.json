@@ -1,0 +1,16 @@
+{
+  "edition": "2024",
+  "source": "SRD 5.2 / Basic Rules 2024",
+  "spellReferenceEdition": "2024",
+  "activationAction": "魔法動作（除非物品另有說明）",
+  "spellcasting": {
+    "usesLowestLevel": true,
+    "expendsUserSlot": false,
+    "requiresComponents": false,
+    "usesSpellCastingTimeRangeDuration": true,
+    "requiresConcentration": true,
+    "itemMayOverrideSpell": true,
+    "fallbackSpellcastingModifier": 0,
+    "appliesProficiencyBonus": true
+  }
+}

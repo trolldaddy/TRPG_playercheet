@@ -1,0 +1,14 @@
+{
+  "edition": "2014",
+  "source": "SRD 5.1 / Basic Rules 2014",
+  "spellReferenceEdition": "2014",
+  "activationAction": "動作（除非物品另有說明）",
+  "spellcasting": {
+    "usesLowestLevel": true,
+    "expendsUserSlot": false,
+    "requiresComponents": false,
+    "usesSpellCastingTimeRangeDuration": true,
+    "requiresConcentration": true,
+    "itemMayOverrideSpell": true
+  }
+}

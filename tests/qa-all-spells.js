@@ -8,7 +8,8 @@ const url = process.env.QA_URL || `file:///${path.resolve("index.html").replace(
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   await page.goto(url, { waitUntil: url.startsWith("file:") ? "load" : "networkidle" });
   await page.waitForTimeout(700);
-  const report = await page.evaluate(() => {
+  const report = await page.evaluate(async () => {
+    if (typeof ensureSpellDataReady === "function") await ensureSpellDataReady("2014");
     const failures = [], editions = {};
     const casterLevel = { B: 20, C: 20, D: 20, P: 20, R: 20, S: 20, K: 20, W: 20 };
     const maxLevel = { B: 9, C: 9, D: 9, P: 5, R: 5, S: 9, K: 9, W: 9 };
@@ -20,7 +21,8 @@ const url = process.env.QA_URL || `file:///${path.resolve("index.html").replace(
         if (names.has(sp.n)) duplicate.push(sp.n); names.add(sp.n);
         const m = meta[sp.n] || {};
         if (!sp.n || sp.lv < 0 || sp.lv > 9 || !sp.cls || !sp.d || sp.d === "PHB 2014 法術") bad.push(`${sp.n || "(無名)"}:基本資料`);
-        if ([m.school, m.time, m.range, m.comp, m.dur, sp.d].some(x => !x || /\?{2,}|undefined|null/.test(String(x)))) bad.push(`${sp.n}:顯示資料`);
+        if ([m.school, m.time, m.range, m.comp, m.dur, sp.d].some(x => !x || /\?|undefined|null/.test(String(x)))) bad.push(`${sp.n}:顯示資料`);
+        if (m.edition !== ruleset || sp.edition !== ruleset || !m.id || !sp.id) bad.push(`${sp.n}:版本識別`);
         const legal = [...sp.cls].some(code => maxLevel[code] >= sp.lv && spellsFor(code, sp.lv).some(x => x.n === sp.n));
         if (!legal) inaccessible.push(sp.n);
       }

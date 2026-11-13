@@ -68,4 +68,11 @@ function fill2024(form){const c=DND_SHEET_MODEL.build(),id=c.identity,cb=c.comba
  const ids=[...Array(9)].map((_,i)=>String(i+1)).concat("abcdefghijklmnopqrstu".split(""));spellRows().slice(0,ids.length).forEach((sp,i)=>{const id=ids[i],meta=spellMetaDb()[sp.n]||{};m[`sp${id}`]=sp.lv||"0";m[`spn-${id}`]=sp.n;m[`spt-${id}`]=meta.time||"";m[`spr-${id}`]=meta.range||"";m[`spnt-${id}`]=meta.dur||"";check(form,`chk-c${id}`,sp.con);check(form,`chk-r${id}`,sp.rit);check(form,`chk-m${id}`,String(meta.comp||"").includes("材"))});Object.entries(m).forEach(([n,v])=>text(form,n,v,n==="class-a-1"||n==="class-a-2"?featureColumnFontSize(v):8));return [{key:"features",title:"職業特徵（續）",chunks:featureLayout.overflow,columns:true,size:6.5},{key:"equipment",title:"裝備（續）",chunks:gearPages.slice(1),size:6.5},{key:"bio",title:"背景故事與性格（續）",chunks:bioPages.slice(1),size:7}].filter(x=>x.chunks.length);
 }
 window.exportOfficialCharacterSheet=async function(){if(!S.cls||!S.sp||!S.bg){toast("請先完成角色資料");return}const is14=S.ruleset==="2014",base=is14?"assets/character-sheets/DnD5E-中文角色卡-2014.pdf":"assets/character-sheets/dnd-2024-中文角色紙.pdf";try{toast("正在產生正式角色卡…");const [pdfBytes,fontBytes]=await Promise.all([fetch(base).then(r=>{if(!r.ok)throw Error("無法讀取角色卡模板");return r.arrayBuffer()}),fetch("assets/fonts/NotoSansCJKtc-Regular.otf").then(r=>r.arrayBuffer())]);const doc=await PDFLib.PDFDocument.load(pdfBytes);doc.registerFontkit(fontkit);const font=await doc.embedFont(fontBytes,{subset:false});const form=doc.getForm(),sections=is14?fill2014(form):fill2024(form);continuationPages(doc,form,font,sections,is14?"2014":"2024");form.updateFieldAppearances(font);if(window.PDF_EXPORT_FLATTEN_FORM===true)form.flatten();const bytes=await doc.save({updateFieldAppearances:false});download(bytes,`${val("fName")||"未命名角色"}-${is14?"DND5e-2014":"DND-2024"}.pdf`);toast("正式角色卡已下載")}catch(e){console.error(e);toast(location.protocol==="file:"?"請透過網站或本機伺服器開啟後再匯出 PDF":"角色卡產生失敗："+e.message)}};
+const exportOfficialCharacterSheetReady=window.exportOfficialCharacterSheet;
+window.exportOfficialCharacterSheet=async function(){
+ if(typeof ensureSpellDataReady==="function"){
+  try{await ensureSpellDataReady(S.ruleset)}catch(e){console.error(e);toast(e.message);return}
+ }
+ return exportOfficialCharacterSheetReady();
+};
 })();
