@@ -2851,14 +2851,38 @@ function featGrantedSpells(){
  });
  if(S.ruleset==="2014"){
    const add=(raw,src,note="")=>{const n=spell14Name(raw),sp=SPELLS14.find(x=>x.n===n);if(sp&&!out.some(x=>x.n===n))out.push({n,lv:sp.lv,d:sp.d,con:sp.con,rit:sp.rit,src,note})};
-   if(S.spChoices.highElfCantrip)add(S.spChoices.highElfCantrip,"高等精靈");
-   if(S.spChoices.subrace==="卓爾"){add("舞光術","卓爾魔法");if(S.level>=3)add("妖火","卓爾魔法","每長休免費一次");if(S.level>=5)add("黑暗術","卓爾魔法","每長休免費一次")}
-   if(S.spChoices.subrace==="森林侏儒")add("次級幻影","天生幻術師");
-   if(S.sp?.n==="提夫林"){add("奇術","煉獄遺贈");if(S.level>=3)add("地獄斥責","煉獄遺贈","二環，每長休免費一次");if(S.level>=5)add("黑暗術","煉獄遺贈","每長休免費一次")}
    Object.entries(S.classChoices14||{}).forEach(([name,st])=>{if(st.natureCantrip)add(st.natureCantrip,"自然領域 · 自然侍祭");if(st.landCantrip)add(st.landCantrip,"大地結社 · 額外戲法");if(name==="武僧"&&subclassNameFor(name)==="陰影之道")add("次級幻影","陰影之道 · 暗影技藝")});
    asiEntries().forEach(({className,lv,v})=>{const src=`${className} ${lv} 級專長「${v.feat}」`;if(v.feat==="魔法學徒"){[v.featCantrip1,v.featCantrip2].filter(Boolean).forEach(n=>add(n,src));if(v.featSpell1)add(v.featSpell1,src,"每長休免費施放一次")}if(v.feat==="儀式施法者")(v.featRituals||[]).forEach(n=>add(n,src,"記錄於儀式書"));if(v.feat==="法術射手"&&v.featCantrip1)add(v.featCantrip1,src)});
  }
  return out;
+}
+/* 物種／種族直接授予的法術；與職業已知或準備數量分開計算。 */
+function speciesGrantedSpells(){
+ const out=[],db=spellDb();
+ const add=(raw,src,note="")=>{const n=S.ruleset==="2014"?spell14Name(raw):raw,sp=db.find(x=>x.n===n);if(sp&&!out.some(x=>x.n===n))out.push({n:sp.n,lv:sp.lv,d:sp.d,con:sp.con,rit:sp.rit,src,note})};
+ if(S.ruleset==="2014"){
+   if(S.spChoices.highElfCantrip)add(S.spChoices.highElfCantrip,"高等精靈");
+   if(S.spChoices.subrace==="卓爾"){add("舞光術","卓爾魔法");if(S.level>=3)add("妖火","卓爾魔法","每長休免費一次");if(S.level>=5)add("黑暗術","卓爾魔法","每長休免費一次")}
+   if(S.spChoices.subrace==="森林侏儒")add("次級幻影","天生幻術師");
+   if(S.sp?.n==="提夫林"){add("奇術","煉獄遺贈");if(S.level>=3)add("地獄斥責","煉獄遺贈","二環，每長休免費一次");if(S.level>=5)add("黑暗術","煉獄遺贈","每長休免費一次")}
+   return out;
+ }
+ if(S.sp?.n==="阿斯莫")add("光亮術","聖光使者");
+ const lineage=S.spChoices.eLine;
+ if(lineage==="卓爾"){add("舞光術","精靈血統 · 卓爾");if(S.level>=3)add("妖火","精靈血統 · 卓爾","每長休免費一次");if(S.level>=5)add("黑暗術","精靈血統 · 卓爾","每長休免費一次")}
+ if(lineage==="高等精靈"){add("變戲法","精靈血統 · 高等精靈");if(S.level>=3)add("偵測魔法","精靈血統 · 高等精靈","每長休免費一次");if(S.level>=5)add("迷蹤步","精靈血統 · 高等精靈","每長休免費一次")}
+ if(lineage==="木精靈"){add("德魯伊工藝","精靈血統 · 木精靈");if(S.level>=3)add("大步奔行","精靈血統 · 木精靈","每長休免費一次");if(S.level>=5)add("行跡無蹤","精靈血統 · 木精靈","每長休免費一次")}
+ const gnome=S.spChoices.gLine;
+ if(gnome==="森林侏儒"){add("次級幻影","侏儒血統 · 森林侏儒");add("與動物交談","侏儒血統 · 森林侏儒","每長休免費一次")}
+ if(gnome==="岩石侏儒"){add("修復術","侏儒血統 · 岩石侏儒");add("變戲法","侏儒血統 · 岩石侏儒")}
+ const fiend=S.spChoices.fLine;
+ if(fiend==="深淵"){add("毒液噴濺","異界血統 · 深淵");if(S.level>=3)add("患病射線","異界血統 · 深淵","每長休免費一次");if(S.level>=5)add("人類定身術","異界血統 · 深淵","每長休免費一次")}
+ if(fiend==="冥界"){add("寒冰之觸","異界血統 · 冥界");if(S.level>=3)add("虛假生命","異界血統 · 冥界","每長休免費一次");if(S.level>=5)add("衰弱射線","異界血統 · 冥界","每長休免費一次")}
+ if(fiend==="九獄"){add("火焰箭","異界血統 · 九獄");if(S.level>=3)add("地獄斥責","異界血統 · 九獄","每長休免費一次");if(S.level>=5)add("黑暗術","異界血統 · 九獄","每長休免費一次")}
+ return out;
+}
+function grantedSpells(){
+ const out=[];[...speciesGrantedSpells(),...featGrantedSpells()].forEach(sp=>{if(!out.some(x=>x.n===sp.n))out.push(sp)});return out;
 }
 /* 物種選擇授予的技能 */
 function speciesSkills(){
@@ -4246,9 +4270,9 @@ function renderSpells(){
  const ci=castInfo();
  if(!ci){
    let nh=`<div class="pb-info">${S.cls?`<b>${S.cls.n}</b> 沒有施法能力。`:"請先選擇職業。"}${S.cls&&["戰士","遊蕩者"].includes(S.cls.n)?`<br><span style="font-size:12.5px;color:var(--muted)">若在 3 級選擇${S.cls.n==="戰士"?"魔能騎士":"奧術騙徒"}子職業,即可在此挑選法師法術。</span>`:""}</div>`;
-   const fg0=featGrantedSpells();
+   const fg0=grantedSpells();
    if(fg0.length){
-     nh+=`<div class="lvl-head"><h4>專長法術</h4><span class="cnt">${fg0.length} 道 · 由專長授予(在第五步「升級」頁選定)</span></div><div class="spell-grid">`;
+     nh+=`<div class="lvl-head"><h4>額外授予法術</h4><span class="cnt">${fg0.length} 道 · 由物種、背景或專長授予</span></div><div class="spell-grid">`;
      fg0.slice().sort((a,b)=>a.lv-b.lv).forEach(sp=>{
        nh+=`<div class="spell-chip inbook" style="cursor:default">
          <span class="sn"><span style="color:var(--leaf)">❧ ${sp.lv?sp.lv+"環 ":"戲法 "}<span class="sref" data-sref="${sp.n}">${sp.n}</span></span><span class="tags">${sp.src}</span></span>
@@ -4330,9 +4354,9 @@ function renderSpells(){
  }
 
  /* 專長授予的法術 */
- const fg=featGrantedSpells();
+ const fg=grantedSpells();
  if(fg.length){
-   h+=`<div class="lvl-head"><h4>專長法術</h4><span class="cnt">${fg.length} 道 · 由專長授予,不佔用已知/準備數量(可在第五步更改)</span></div>
+   h+=`<div class="lvl-head"><h4>額外授予法術</h4><span class="cnt">${fg.length} 道 · 由物種、背景或專長授予，不佔用已知/準備數量</span></div>
    <div class="spell-grid">`;
    fg.slice().sort((a,b)=>a.lv-b.lv).forEach(sp=>{
      h+=`<div class="spell-chip inbook" style="cursor:default">
@@ -4463,7 +4487,7 @@ function portraitBlock(){
 
 /* ── 整幅法術表(角色卡 · 可列印) ── */
 function spellSheet2014(){
- const profiles=castingProfiles2014(),fg=featGrantedSpells();if(!profiles.length&&!fg.length)return "";
+ const profiles=castingProfiles2014(),fg=grantedSpells();if(!profiles.length&&!fg.length)return "";
  const block=(title,rows)=>rows.length?`<div class="ss-block"><div class="ss-bt">${title}</div><table class="ss-tbl">${rows.map(r=>`<tr><td class="c1">${r.mark||""}</td><td class="c2">${r.lv===0?"戲法":r.lv+" 環"}</td><td class="c3">${r.n}</td><td class="c4">${r.tag||""}</td><td class="c5">${r.d||""}</td></tr>`).join("")}</table></div>`:"";
  let h=`<div class="spell-sheet"><div class="ss-title">PHB 2014 法術表</div>`;
  const casterLv=multiclassCasterLevel(),shared=casterLv?(SLOTS_FULL[casterLv]||[]):[];
@@ -4479,21 +4503,21 @@ function spellSheet2014(){
    else h+=block(`${ci.kind==="known"?"已知":"已準備"}法術（${st.known.length}/${ci.prep}）`,rows(st.known).map(x=>({mark:"◆",...x})));
    if(ci.name==="邪術師"){const cs=classChoiceStore14("邪術師"),arc=[6,7,8,9].filter(x=>cs["arcanum"+x]).map(x=>{const n=cs["arcanum"+x],sp=SPELLS14.find(y=>y.n===n);return {mark:"✦",lv:x,n,tag:"玄奧秘法 · 每長休一次",d:sp?.d||""}});h+=block(`玄奧秘法（${arc.length}）`,arc)}
  });
- h+=block(`專長法術（${fg.length}）`,fg.map(x=>({mark:"❧",...x,tag:x.src})));return h+`</div>`;
+ h+=block(`額外授予法術（${fg.length}）`,fg.map(x=>({mark:"❧",...x,tag:[x.src,x.note].filter(Boolean).join(" · ")})));return h+`</div>`;
 }
 function spellSheet(){
  if(S.ruleset==="2014")return spellSheet2014();
  const ci=castInfo();
- const fg=featGrantedSpells();
+ const fg=grantedSpells();
  const tags0=sp=>[sp.con?"專注":"",sp.rit?"儀式":""].filter(Boolean).join(" · ");
  if(!ci){
    /* 非施法者:僅當擁有專長法術時輸出精簡法術表 */
    if(!fg.length)return "";
    let nh=`<div class="spell-sheet"><div class="ss-title">法術表</div>
-     <div class="ss-head"><span><b>專長授予</b></span><span>不消耗職業法術資源</span></div>
-     <div class="ss-block ss-always"><div class="ss-bt">專長法術（${fg.length}）</div><table class="ss-tbl">`;
+     <div class="ss-head"><span><b>物種／專長授予</b></span><span>不佔職業已知或準備數量</span></div>
+     <div class="ss-block ss-always"><div class="ss-bt">額外授予法術（${fg.length}）</div><table class="ss-tbl">`;
    fg.slice().sort((a,b)=>a.lv-b.lv).forEach(sp=>{
-     nh+=`<tr><td class="c1">❧</td><td class="c2">${sp.lv?sp.lv+" 環":"戲法"}</td><td class="c3"><span class="sref" data-sref="${sp.n}">${sp.n}</span></td><td class="c4">${sp.src}${tags0(sp)?" · "+tags0(sp):""}</td><td class="c5">${sp.d}</td></tr>`;
+     nh+=`<tr><td class="c1">❧</td><td class="c2">${sp.lv?sp.lv+" 環":"戲法"}</td><td class="c3"><span class="sref" data-sref="${sp.n}">${sp.n}</span></td><td class="c4">${[sp.src,sp.note,tags0(sp)].filter(Boolean).join(" · ")}</td><td class="c5">${sp.d}</td></tr>`;
    });
    nh+=`</table></div></div>`;
    return nh;
@@ -4558,7 +4582,7 @@ function spellSheet(){
  if(fg.length){
    const rows=fg.slice().sort((a,b)=>a.lv-b.lv||a.n.localeCompare(b.n,"zh"))
      .map(sp=>({mark:"❧",lv:sp.lv?sp.lv+" 環":"戲法",n:sp.n,tag:sp.src,d:sp.d}));
-   h+=block(`專長法術（${fg.length}，不佔已知/準備數量）`,rows,"ss-always");
+   h+=block(`額外授予法術（${fg.length}，不佔已知/準備數量）`,rows,"ss-always");
  }
  /* 已準備:按環階分組 */
  if(S.prepared.size){
