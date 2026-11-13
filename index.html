@@ -3287,6 +3287,39 @@ function ensureClassLevels(){
 }
 function hitDicePools(){ensureClassLevels();return DND_STATE.hitDicePools(S,CLASSES)}
 function syncRemainingHitDice(beforePools=null){return DND_STATE.syncHitDice(S,CLASSES,beforePools)}
+function reconcileSpellSelections(){
+ if(S.ruleset==="2014"){
+   const profiles=new Map(castingProfiles2014().map(ci=>[ci.name,ci]));
+   Object.entries(S.spellByClass||{}).forEach(([name,store])=>{
+     const ci=profiles.get(name);if(!ci){delete S.spellByClass[name];return}
+     const valid=n=>{const sp=SPELLS14.find(x=>x.n===n);return !!sp&&sp.lv<=ci.max&&(ci.magicSecrets||sp.cls.includes(ci.code))};
+     store.cantrips=(store.cantrips||[]).filter(n=>{const sp=SPELLS14.find(x=>x.n===n);return sp?.lv===0&&(ci.magicSecrets||sp.cls.includes(ci.code))}).slice(0,ci.cant);
+     store.known=(store.known||[]).filter(valid).slice(0,ci.prep);
+     store.book=(store.book||[]).filter(valid).slice(0,ci.bookMax);
+     store.prepared=(store.prepared||[]).filter(n=>(store.book||[]).includes(n)).slice(0,ci.prep);
+   });
+   return;
+ }
+ const ci=castInfo();
+ if(!ci){S.cantrips.clear();S.spellbook.clear();S.prepared.clear();return}
+ const bardSecrets=ci.code==="B"&&S.cls?.n==="吟遊詩人"&&S.level>=10,allowed=sp=>sp.cls.includes(ci.code)||(bardSecrets&&/[CDW]/.test(sp.cls));
+ S.cantrips=new Set([...S.cantrips].filter(n=>{const sp=SPELLS.find(x=>x.n===n);return sp?.lv===0&&allowed(sp)}).slice(0,ci.cant));
+ S.prepared=new Set([...S.prepared].filter(n=>{const sp=SPELLS.find(x=>x.n===n);return sp&&sp.lv>=1&&sp.lv<=ci.max&&allowed(sp)}).slice(0,ci.prep));
+ if(ci.book)S.spellbook=new Set([...S.spellbook].filter(n=>{const sp=SPELLS.find(x=>x.n===n);return sp&&sp.lv>=1&&sp.lv<=ci.max&&sp.cls.includes(ci.code)}).slice(0,spellbookMax()));else S.spellbook.clear();
+}
+function reconcileProgress(beforePools=null){
+ DND_STATE.reconcileProgress(S,CLASSES,beforePools);
+ if(S.ruleset==="2014"){
+   if(classLevel(S.cls?.n)<(PHB14_SUB_AT[S.cls?.n]||3))S.sub=null;
+   Object.keys(S.classSubs||{}).forEach(name=>{if(classLevel(name)<(PHB14_SUB_AT[name]||3))delete S.classSubs[name]});
+ }else{
+   if(S.level<subLevel())S.sub=null;
+   if(S.level<(STYLE_AT[S.cls?.n]??99))S.style="";
+   if(S.level<7){S.blessed="";S.efury=""}
+   if(S.level<19){S.boon="";S.boonAb=""}
+ }
+ reconcileSpellSelections();syncPlayHP();return S;
+}
 function classLevel(name){ensureClassLevels();return +(S.classLevels[name]||0)}
 function classSummary(){
  if(!S.cls)return "—";
@@ -4059,12 +4092,12 @@ function renderLevel(){
  body.innerHTML=html;
 
  /* 繫結 */
- $("lvUp").onclick=()=>{if(S.level<20){const before=hitDicePools();if(S.ruleset==="2014"){ensureClassLevels();S.classLevels[S.cls.n]++}S.level++;ensureClassLevels();syncRemainingHitDice(before);renderLevel();update()}};
- $("lvDown").onclick=()=>{if(S.level>1){const before=hitDicePools();if(S.ruleset==="2014"){ensureClassLevels();if(S.classLevels[S.cls.n]<=1)return;S.classLevels[S.cls.n]--}S.level--;ensureClassLevels();syncRemainingHitDice(before);renderLevel();update()}};
- body.querySelectorAll("[data-clup]").forEach(b=>b.onclick=()=>{if(S.level<20){const before=hitDicePools();S.classLevels[b.dataset.clup]++;ensureClassLevels();syncRemainingHitDice(before);renderLevel();update()}});
- body.querySelectorAll("[data-cldown]").forEach(b=>b.onclick=()=>{const n=b.dataset.cldown;if(S.classLevels[n]>1){const before=hitDicePools();S.classLevels[n]--;ensureClassLevels();syncRemainingHitDice(before);renderLevel();update()}});
- body.querySelectorAll("[data-clremove]").forEach(b=>b.onclick=()=>{const before=hitDicePools(),n=b.dataset.clremove;delete S.classLevels[n];delete S.classSubs[n];delete S.spellByClass[n];delete S.asiByClass[n];delete S.classChoices14[n];delete S.hpRollsByClass[n];ensureClassLevels();syncRemainingHitDice(before);renderLevel();update()});
- if($("multiAdd"))$("multiAdd").onchange=e=>{const n=e.target.value;if(n&&meetsMultiReq(n)&&meetsMultiReq(S.cls.n)){const before=hitDicePools();S.classLevels[n]=1;ensureClassLevels();syncRemainingHitDice(before);renderLevel();update()}};
+ $("lvUp").onclick=()=>{if(S.level<20){const before=hitDicePools();if(S.ruleset==="2014")S.classLevels[S.cls.n]++;else S.level++;reconcileProgress(before);renderLevel();update()}};
+ $("lvDown").onclick=()=>{if(S.level>1){const before=hitDicePools();if(S.ruleset==="2014"){if(S.classLevels[S.cls.n]<=1)return;S.classLevels[S.cls.n]--}else S.level--;reconcileProgress(before);renderLevel();update()}};
+ body.querySelectorAll("[data-clup]").forEach(b=>b.onclick=()=>{if(S.level<20){const before=hitDicePools();S.classLevels[b.dataset.clup]++;reconcileProgress(before);renderLevel();update()}});
+ body.querySelectorAll("[data-cldown]").forEach(b=>b.onclick=()=>{const n=b.dataset.cldown;if(S.classLevels[n]>1){const before=hitDicePools();S.classLevels[n]--;reconcileProgress(before);renderLevel();update()}});
+ body.querySelectorAll("[data-clremove]").forEach(b=>b.onclick=()=>{const before=hitDicePools();delete S.classLevels[b.dataset.clremove];reconcileProgress(before);renderLevel();update()});
+ if($("multiAdd"))$("multiAdd").onchange=e=>{const n=e.target.value;if(n&&meetsMultiReq(n)&&meetsMultiReq(S.cls.n)){const before=hitDicePools();S.classLevels[n]=1;reconcileProgress(before);renderLevel();update()}};
  body.querySelectorAll("[data-hm]").forEach(b=>b.onclick=()=>{S.hpMode=b.dataset.hm;renderLevel();update()});
  body.querySelectorAll("[data-hplv]").forEach(inp=>inp.onchange=()=>{
    S.hpRolls[inp.dataset.hplv]=inp.value;renderLevel();update();
@@ -4851,7 +4884,7 @@ function deserialize(o){
  S.portrait=(typeof o.portrait==="string"&&o.portrait.startsWith("data:image/"))?o.portrait:"";
  S.bio=Object.assign({look:"",traits:"",story:"",allies:"",notes:""},o.bio||{});
  S.play=Object.assign({hp:null,hpMax:null,thp:0,hd:null,hdByClass:null,ds:{s:0,f:0},insp:false,res:{},resMax:{},custom:[],notes:""},o.play||{});
- ensureClassLevels();syncRemainingHitDice();syncPlayHP();
+ reconcileProgress();
  S.id=o.id||newId();
  const m=o.meta||{};
  [["fName","name"],["fPlayer","player"],["fAlign","align"],["fFaith","faith"],["fGender","gender"],["fAge","age"]]

@@ -67,5 +67,30 @@
     state.play.hd=Object.values(state.play.hdByClass).reduce((sum,n)=>sum+n,0);
   }
 
-  window.DND_STATE=Object.freeze({normalizeClassProgress,hitDicePools,syncHitDice,changeHitDie});
+  const pruneAbove=(record,max)=>{
+    if(!record||typeof record!=="object")return;
+    Object.keys(record).forEach(key=>{if(/^\d+$/.test(key)&&+key>max)delete record[key]});
+  };
+
+  function reconcileProgress(state,knownClasses=[],beforePools=null){
+    normalizeClassProgress(state,knownClasses);
+    const active=new Set(Object.keys(state.classLevels||{}));
+    ["classSubs","spellByClass","asiByClass","classChoices14","hpRollsByClass"].forEach(key=>{
+      const record=state[key];if(!record||typeof record!=="object")return;
+      Object.keys(record).forEach(name=>{if(!active.has(name))delete record[name]});
+    });
+    if(state.ruleset==="2014"){
+      Object.entries(state.classLevels||{}).forEach(([name,level])=>{
+        pruneAbove(state.asiByClass?.[name],level);
+        pruneAbove(state.hpRollsByClass?.[name],level);
+      });
+    }else{
+      pruneAbove(state.asi,state.level);
+      pruneAbove(state.hpRolls,state.level);
+    }
+    syncHitDice(state,knownClasses,beforePools);
+    return state;
+  }
+
+  window.DND_STATE=Object.freeze({normalizeClassProgress,hitDicePools,syncHitDice,changeHitDie,reconcileProgress});
 })();
