@@ -12,11 +12,12 @@
     const backgroundGear=S.ruleset==="2014"?(BG14_DETAILS?.[S.bg?.n]?.gear||""):(typeof backgroundGearText2024==="function"?backgroundGearText2024():"");
     const tools=unique([prof.tools==="無"?[]:prof.tools,S.gear?.customTools]);
     const languages=unique([prof.languages==="無"?[]:prof.languages,S.gear?.customLanguages]);
-    const equipmentRows=[classGear.raw,...(classGear.packs||[]),backgroundGear,bought.工具.join("、"),bought.冒險用品.join("、"),S.gear?.items].filter(Boolean);
+    const magicItems=(S.gear?.magicItems||[]).map(x=>typeof x==="string"?x:x?.name).filter(Boolean);
+    const equipmentRows=[classGear.raw,...(classGear.packs||[]),backgroundGear,bought.工具.join("、"),bought.冒險用品.join("、"),magicItems.length?`魔法物品：${magicItems.join("、")}`:"",S.gear?.items].filter(Boolean);
     const allEquipment=unique([equipmentRows,S.gear?.armor,S.gear?.shield?"盾牌":[],S.gear?.weapons]);
     return {
       proficiencies:{armor:prof.armor||"無",weapons:prof.weapons||"無",tools:tools.join("、")||"無",languages:languages.join("、")||"無"},
-      equipment:{classGear:classGear.raw||"",packs:classGear.packs||[],backgroundGear,bought,manual:S.gear?.items||"",armor:S.gear?.armor||"",shield:!!S.gear?.shield,weapons:[...(S.gear?.weapons||[])],rows:equipmentRows,allText:allEquipment.join("、")},
+      equipment:{classGear:classGear.raw||"",packs:classGear.packs||[],backgroundGear,bought,magicItems,manual:S.gear?.items||"",armor:S.gear?.armor||"",shield:!!S.gear?.shield,weapons:[...(S.gear?.weapons||[])],rows:equipmentRows,allText:allEquipment.join("、")},
       money:{...(S.gear?.gold||{pp:0,gp:0,sp:0,cp:0})}
     };
   }
