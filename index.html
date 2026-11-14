@@ -320,6 +320,8 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
 .ruleset-card:hover,.ruleset-card.selected{border-color:var(--gold);box-shadow:inset 4px 0 var(--gold)}
 .ruleset-card b{display:block;color:var(--parch);font-size:18px;margin-bottom:5px}.ruleset-card span{display:block;color:var(--muted);font-size:13px;line-height:1.6}
 .ruleset-badge{display:inline-block;border:1px solid var(--gold);color:var(--gold);padding:2px 8px;font:12px var(--sans);letter-spacing:.04em}
+.quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:18px 0}.quick-grid label{font-size:12px;color:var(--gold);letter-spacing:.08em}.quick-grid select,.quick-grid input{display:block;width:100%;margin-top:5px}.quick-summary{background:#f8f3e2;border:1px solid var(--line-soft);padding:12px 14px;font-size:13px;line-height:1.7}.quick-summary b{color:var(--blood)}
+@media(max-width:540px){.quick-grid{grid-template-columns:1fr}.quick-grid .wide{grid-column:auto}}
 .save-toast.show{opacity:1}
 
 /* ══ 跑團狀態 ══ */
@@ -555,6 +557,7 @@ body.play-mode{overflow:hidden}.play-mode-view.open{display:block}
   <span class="ruleset-badge" id="rulesetBadge">5R · 2024</span>
   <span class="credit">製作 -Paradogs · QQ:407404166 · 禁止商用</span>
   <div class="hdr-acts">
+    <button id="btnQuickBuild">快速創角</button>
     <button id="btnPlayMode">跑團模式</button>
     <button id="btnRuleset">切換規則</button>
     <button id="btnRoster">角色庫</button>
@@ -571,6 +574,24 @@ body.play-mode{overflow:hidden}.play-mode-view.open{display:block}
       <button class="ruleset-card" data-ruleset="2024"><b>D&amp;D 5R · 2024</b><span>物種、背景屬性加值、起源專長、武器掌握與修訂職業進程。</span></button>
     </div>
     <div class="mhint" id="rulesetStatus"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="quickBuildModal">
+  <div class="modal">
+    <button class="close-x" id="closeQuickBuild" aria-label="關閉">×</button>
+    <h3>快速建立 1 級角色</h3>
+    <div class="mhint">選擇核心概念後，系統會依版本自動配置標準陣列、合法熟練、起始套裝與法術。完成後仍可回到每個步驟細修。</div>
+    <div class="quick-grid">
+      <label>規則版本<select id="quickRuleset"><option value="2024">D&amp;D 5R · 2024</option><option value="2014">D&amp;D 5E · 2014</option></select></label>
+      <label>角色名稱<input id="quickName" placeholder="可留空，之後再填"></label>
+      <label>職業<select id="quickClass"></select></label>
+      <label>背景<select id="quickBackground"></select></label>
+      <label>物種／種族<select id="quickSpecies"></select></label>
+      <label>配置傾向<select id="quickStyle"><option value="recommended">職業推薦</option><option value="durable">偏重生存</option><option value="random">隨機但合法</option></select></label>
+    </div>
+    <div class="quick-summary" id="quickSummary"></div>
+    <div class="modal-acts"><button id="quickCancel">取消</button><button class="primary" id="quickCreate">建立並檢視角色卡</button></div>
   </div>
 </div>
 
@@ -5210,11 +5231,104 @@ function resetState(){
  S.skills=new Set();S.level=1;S.sub=null;S.classLevels={};S.classSubs={};S.spellByClass={};S.asiByClass={};S.startGear14={};S.startGear24={};S.classChoices14={};S.hpMode="avg";S.hpRolls={};S.hpRollsByClass={};
  S.asi={};S.boon="";S.boonAb="";S.style="";S.mastery=new Set();S.primalSkill="";
  S.cantrips=new Set();S.spellbook=new Set();S.prepared=new Set();S.customSpells=[];S.slotsUsed={};S.spChoices={};S.bgChoices14={};S.bgGear24={};S.languages24=[];
+ S.metamagic=new Set();S.featSpells={};S.invocations=new Set();S.expertise=new Set();S.divineOrder="";S.primalOrder="";S.blessed="";S.efury="";S.primalSkill="";
  S.gear={armor:"",unarmored:"auto",shield:false,weapons:[],miscAC:0,miscLabel:"",items:"",magicItems:[],customLanguages:[],customTools:[],gold:{pp:0,gp:0,sp:0,cp:0},purchases:{}};S.showAC=false;S.portrait="";
  S.bio={look:"",traits:"",story:"",allies:"",notes:""};
  S.play={hp:null,hpMax:null,thp:0,hd:null,hdByClass:{},ds:{s:0,f:0},insp:false,res:{},resMax:{},custom:[],notes:""};
  S.id=newId();
  ["fName","fPlayer","fAlign","fFaith","fGender","fAge"].forEach(id=>$(id).value="");
+}
+
+const QUICK_PRIORITY={
+ "野蠻人":["str","con","dex","wis","cha","int"],"吟遊詩人":["cha","dex","con","wis","int","str"],"牧師":["wis","con","str","dex","cha","int"],"德魯伊":["wis","con","dex","int","cha","str"],
+ "戰士":["str","con","dex","wis","cha","int"],"武僧":["dex","wis","con","str","int","cha"],"聖武士":["str","cha","con","wis","dex","int"],"遊俠":["dex","wis","con","str","int","cha"],
+ "遊蕩者":["dex","con","int","wis","cha","str"],"術士":["cha","con","dex","wis","int","str"],"邪術師":["cha","con","dex","wis","int","str"],"法師":["int","con","dex","wis","cha","str"]
+};
+function quickShuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function quickPriority(className,style){let p=[...(QUICK_PRIORITY[className]||Object.keys(ABN))];if(style==="durable"){p=p.filter(x=>x!=="con");p.splice(1,0,"con")}else if(style==="random")p=quickShuffle(p);return [...new Set(p)]}
+function renderQuickBuildOptions(){
+ const rules=$("quickRuleset").value,bgs=rules==="2014"?BACKGROUNDS_2014:BACKGROUNDS_2024,sps=rules==="2014"?SPECIES_2014:SPECIES_2024;
+ const fill=(id,items)=>{const el=$(id),old=el.value;el.innerHTML=items.map(x=>`<option value="${x.n}">${x.n}</option>`).join("");if(items.some(x=>x.n===old))el.value=old};
+ fill("quickClass",CLASSES);fill("quickBackground",bgs);fill("quickSpecies",sps);
+ const cls=CLASSES.find(x=>x.n===$("quickClass").value),bg=bgs.find(x=>x.n===$("quickBackground").value),sp=sps.find(x=>x.n===$("quickSpecies").value);
+ $("quickSummary").innerHTML=cls&&bg&&sp?`<b>${rules==="2014"?"5E 2014":"5R 2024"}</b> · ${sp.n} ${cls.n} · ${bg.n}<br>使用標準陣列與職業推薦配置；自動選擇合法的熟練、起始套裝${cls.caster?"與法術":""}。建立後可逐項更換。`:"";
+}
+function openQuickBuild(){
+ $("quickRuleset").value=S.ruleset;renderQuickBuildOptions();$("quickBuildModal").classList.add("open");
+}
+function closeQuickBuild(){$("quickBuildModal").classList.remove("open")}
+function quickChooseSpecies(sp,priority){
+ S.sp=sp;S.spChoices={};const usedAb=new Set(),usedSkills=new Set([...(S.bg?.sk||[]),...S.skills]);
+ for(const c of sp.ch||[]){
+   if(c.t==="subrace")S.spChoices[c.k]=c.opts[0];
+   else if(c.t==="ability"){const pool=c.pool||priority,choice=priority.find(x=>pool.includes(x)&&!usedAb.has(x)&&(x!=="cha"||!sp.ab?.cha))||pool.find(x=>!usedAb.has(x));if(choice){S.spChoices[c.k]=choice;usedAb.add(choice)}}
+   else if(c.t==="skill"){const pool=c.pool||ALL_SKILLS,Sv=pool.find(x=>!usedSkills.has(x))||pool[0];if(Sv){S.spChoices[c.k]=Sv;usedSkills.add(Sv)}}
+   else if(c.t==="spell"){const spell=spellsFor(c.code,c.level||0)[0];if(spell)S.spChoices[c.k]=spell.n}
+   else if(c.t==="ofeat")S.spChoices[c.k]=originFeatOptions().find(x=>x!==S.bg?.feat)||originFeatOptions()[0];
+   else if(c.t==="opt"){const opt=(SP_OPTS[c.opts]||[])[0];if(opt)S.spChoices[c.k]=opt.n}
+   else if(Array.isArray(c.opts)&&c.opts.length)S.spChoices[c.k]=c.opts[0];
+ }
+}
+function quickChooseBackground(bg){
+ S.bg=bg;S.bgChoices14={};const used=new Set;
+ for(const c of BG14_DETAILS[bg.n]?.choices||[]){const v=c.o.find(x=>!used.has(x))||c.o[0];if(v){S.bgChoices14[c.k]=v;used.add(v)}}
+}
+function quickAssignAbilities(priority){S.method="array";Object.keys(S.base).forEach(k=>S.base[k]=null);priority.forEach((k,i)=>S.base[k]=STANDARD[i]??8)}
+function quickFillClassChoices(){
+ if(S.ruleset==="2014"){
+   if((PHB14_SUB_AT[S.cls.n]||3)<=1)S.sub=0;
+   const st=classChoiceStore14(S.cls.n);
+   if(S.cls.n==="戰士")st.style="防禦";
+   if(S.cls.n==="吟遊詩人")st.classInstruments=INSTRUMENTS_2014.slice(0,3);
+   if(S.cls.n==="武僧")st.monkTool=ARTISAN_TOOLS_2014[0];
+   if(S.cls.n==="遊俠"){st.favoredEnemies=["野獸"];st.terrains=["森林"]}
+   if(S.cls.n==="術士"&&subclassNameFor("術士")==="龍族血脈")st.dragonAncestry="紅龍";
+ }else{
+   if(S.cls.n==="牧師")S.divineOrder=DIVINE_ORDER[0].n;
+   if(S.cls.n==="德魯伊")S.primalOrder=PRIMAL_ORDER[0].n;
+   if((STYLE_AT[S.cls.n]??99)<=1)S.style=FSTYLES.find(x=>S.cls.n==="遊俠"||!x.n.includes("僅遊俠"))?.n||"";
+   if(S.cls.n==="邪術師")INVOCATIONS.filter(x=>x.lv<=1&&!x.req).slice(0,invocationCount()).forEach(x=>S.invocations.add(x.n));
+ }
+}
+function quickFillGear(){
+ let raw="",gp=0;
+ if(S.ruleset==="2014"){
+   const d=START_GEAR_2014[S.cls.n];S.startGear14={mode:"kit"};
+   (d?.groups||[]).forEach((opts,i)=>{S.startGear14[i]=0;const spec=genericWeaponSpec2014(opts[0]);if(spec)weaponOptions2014(spec).slice(0,spec.count).forEach((n,j)=>S.startGear14[`wp_${i}_${j}`]=n)});
+   const fixedSpec=genericWeaponSpec2014(d?.fixed||"");if(fixedSpec)weaponOptions2014(fixedSpec).slice(0,fixedSpec.count).forEach((n,j)=>S.startGear14[`wp_fixed_${j}`]=n);
+   raw=startingGearText2014();
+   const bg=BG14_DETAILS[S.bg?.n];if(bg?.gear)raw+=(raw?"、":"")+bg.gear;
+ }else{
+   const opts=START_GEAR_2024[S.cls.n]||[],idx=Math.max(0,opts.findIndex(x=>x.items)),d=opts[idx];
+   S.startGear24={choice:idx,goldApplied:d?.gp||0,tool:d?.choice==="instrument"?INSTRUMENTS_2014[0]:d?.choice==="monkTool"?ARTISAN_TOOLS_2014[0]:""};
+   S.bgGear24={choice:"kit",goldApplied:BG_GEAR_2024[S.bg?.n]?.gp||0};gp=(d?.gp||0)+(BG_GEAR_2024[S.bg?.n]?.gp||0);
+   raw=[resolvedStartingGear2024(),backgroundGearText2024()].filter(Boolean).join("、");
+ }
+ S.gear.gold={pp:0,gp,sp:0,cp:0};S.gear.items=raw;
+ S.gear.weapons=S.ruleset==="2014"?startingWeapons2014():startingWeapons2024();
+ const armor=ARMORS.slice().sort((a,b)=>b.n.length-a.n.length).find(a=>raw.includes(a.n));S.gear.armor=armor?.n||"";S.gear.shield=raw.includes("盾牌");
+ if(S.ruleset==="2024"&&masteryCount()>0){const pool=masteryPool(),names=[...S.gear.weapons,...pool.map(x=>x[1])];[...new Set(names)].filter(n=>pool.some(w=>w[1]===n)).slice(0,masteryCount()).forEach(n=>S.mastery.add(n))}
+}
+function quickFillSpells(){
+ if(S.ruleset==="2014"){
+   castingProfiles2014().forEach(ci=>{const st=spellStore2014(ci.name),can=spellsFor(ci.code,0);st.cantrips=can.slice(0,ci.cant).map(x=>x.n);const fixed=new Set(fixedSpells2014(ci.name).map(x=>x.n)),pool=spellDb().filter(x=>x.lv>0&&x.lv<=ci.max&&x.cls.includes(ci.code)&&!fixed.has(x.n));if(ci.kind==="book"){st.book=pool.slice(0,ci.bookMax).map(x=>x.n);st.prepared=st.book.slice(0,ci.prep)}else st.known=pool.slice(0,ci.prep).map(x=>x.n)});
+ }else{
+   const ci=castInfo();if(!ci)return;S.cantrips=new Set(spellsFor(ci.code,0).slice(0,ci.cant).map(x=>x.n));const fixed=new Set(alwaysPrepared().map(x=>x.n)),pool=spellDb().filter(x=>x.lv>0&&x.lv<=ci.max&&x.cls.includes(ci.code)&&!fixed.has(x.n));if(ci.book){S.spellbook=new Set(pool.slice(0,spellbookMax()).map(x=>x.n));S.prepared=new Set([...S.spellbook].slice(0,ci.prep))}else S.prepared=new Set(pool.slice(0,ci.prep).map(x=>x.n));
+ }
+}
+async function createQuickCharacter(){
+ const btn=$("quickCreate");btn.disabled=true;btn.textContent="建立中…";
+ try{
+   if(S.cls&&storageAvailable())saveCurrent(true);
+   const rules=$("quickRuleset").value,name=$("quickName").value.trim(),style=$("quickStyle").value;
+   S.ruleset=rules;syncRulesetUI();resetState();if(rules==="2014")await ensureSpellDataReady("2014");
+   const cls=CLASSES.find(x=>x.n===$("quickClass").value),bg=(rules==="2014"?BACKGROUNDS_2014:BACKGROUNDS_2024).find(x=>x.n===$("quickBackground").value),sp=(rules==="2014"?SPECIES_2014:SPECIES_2024).find(x=>x.n===$("quickSpecies").value);
+   if(!cls||!bg||!sp)throw new Error("快速創角選項不完整");
+   S.cls=cls;S.level=1;S.classLevels={[cls.n]:1};const priority=quickPriority(cls.n,style);quickChooseBackground(bg);S.skills=new Set(cls.sk.filter(x=>!bg.sk.includes(x)).concat(cls.sk).slice(0,cls.skc));quickChooseSpecies(sp,priority);quickAssignAbilities(priority);
+   if(rules==="2024"){const allowed=bg.ab,b2=priority.find(x=>allowed.includes(x))||allowed[0],b1=priority.find(x=>allowed.includes(x)&&x!==b2)||allowed.find(x=>x!==b2);S.bonusMode="21";S.bonus={b2,b1,c1:"",c2:"",c3:""};S.languages24=LANGUAGES_2024.slice(0,2)}
+   quickFillClassChoices();quickFillGear();quickFillSpells();reconcileProgress();syncPlayHP();$("fName").value=name;
+   closeQuickBuild();refreshAll();go(7);renderFinal();saveCurrent(true);toast("已建立可繼續編輯的 1 級角色");
+ }catch(err){console.error(err);alert("快速創角失敗："+err.message)}finally{btn.disabled=false;btn.textContent="建立並檢視角色卡"}
 }
 function refreshAll(){
  renderClasses();renderOrigin();renderMethod();renderBonus();update();
@@ -5899,14 +6013,20 @@ window.onbeforeprint=()=>{if(!$("finalSheet").innerHTML)renderFinal()};
 ["fName","fPlayer","fAlign","fFaith","fGender","fAge"].forEach(id=>$(id).addEventListener("input",update));
 
 $("btnRoster").onclick=openRoster;
+$("btnQuickBuild").onclick=openQuickBuild;
 $("btnPlayMode").onclick=openPlayMode;
+$("closeQuickBuild").onclick=closeQuickBuild;
+$("quickCancel").onclick=closeQuickBuild;
+$("quickCreate").onclick=createQuickCharacter;
+$("quickBuildModal").onclick=e=>{if(e.target.id==="quickBuildModal")closeQuickBuild()};
+[$("quickRuleset"),$("quickClass"),$("quickBackground"),$("quickSpecies"),$("quickStyle")].forEach(el=>el.addEventListener("change",renderQuickBuildOptions));
 $("btnRuleset").onclick=()=>{$("rulesetModal").classList.add("open");syncRulesetUI()};
 $("closeRuleset").onclick=()=>$("rulesetModal").classList.remove("open");
 $("rulesetModal").onclick=e=>{if(e.target.id==="rulesetModal")$("rulesetModal").classList.remove("open")};
 document.querySelectorAll("[data-ruleset]").forEach(b=>b.onclick=()=>chooseRuleset(b.dataset.ruleset));
 $("closeRoster").onclick=closeRoster;
 $("rosterModal").onclick=e=>{if(e.target.id==="rosterModal")closeRoster()};
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeRoster();if(document.body.classList.contains("play-mode"))$("pmClose")?.click()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeRoster();closeQuickBuild();if(document.body.classList.contains("play-mode"))$("pmClose")?.click()}});
 $("actNew").onclick=newChar;
 $("actSaveNow").onclick=()=>{if(saveCurrent())renderRoster();else toast("目前環境無法使用瀏覽器儲存")};
 $("actExportAll").onclick=exportAll;
