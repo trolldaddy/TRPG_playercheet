@@ -1,12 +1,10 @@
 const { chromium } = require("playwright");
-const path = require("path");
-
-const url = process.env.QA_URL || `file:///${path.resolve("index.html").replace(/\\/g, "/")}`;
+const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
 
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: "chrome" });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await page.goto(url, { waitUntil: url.startsWith("file:") ? "load" : "networkidle" });
+  await page.goto(url, { waitUntil: "networkidle" });
   await page.waitForTimeout(700);
   const report = await page.evaluate(async () => {
     if (typeof ensureSpellDataReady === "function") await ensureSpellDataReady("2014");

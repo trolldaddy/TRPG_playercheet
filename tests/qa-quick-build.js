@@ -18,6 +18,13 @@ const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
       document.getElementById("quickRuleset").value = ruleset;
       renderQuickBuildOptions();
       document.getElementById("quickClass").value = className;
+      renderQuickBuildOptions();
+      const summary = document.getElementById("quickSummary");
+      const summaryOK = summary.textContent.includes(className)
+        && summary.textContent.includes("角色定位")
+        && summary.textContent.includes("第一回合思路")
+        && summary.querySelectorAll(".quick-feature").length > 0
+        && summary.textContent.includes("本工具自行撰寫");
       document.getElementById("quickName").value = `快建-${ruleset}-${className}`;
       await createQuickCharacter();
       const ci = ruleset === "2014" ? null : castInfo();
@@ -37,13 +44,18 @@ const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
         gear: startingGearReady2014() && startingGearReady2024(),
         spellOK,
         saved: Boolean(record && record.character && record.runtime),
+        summaryOK,
+        guideOK: document.getElementById("quickGuideModal").classList.contains("open")
+          && document.getElementById("quickGuideBody").textContent.includes("輪到你之前")
+          && document.getElementById("quickGuideBody").textContent.includes(className),
         hp: hpTotal(),
         weapons: S.gear.weapons.length,
         staleChoices: (S.cls.n !== "邪術師" && S.invocations.size) || (S.cls.n !== "牧師" && S.divineOrder) || (S.cls.n !== "德魯伊" && S.primalOrder) || S.metamagic.size
       };
+      closeQuickGuide();
       return state;
     }, { ruleset, className });
-    const failed = Object.entries(result).filter(([key, value]) => ["abilities", "skills", "species", "background", "languages", "gear", "spellOK", "saved"].includes(key) && value !== true);
+    const failed = Object.entries(result).filter(([key, value]) => ["abilities", "skills", "species", "background", "languages", "gear", "spellOK", "saved", "summaryOK", "guideOK"].includes(key) && value !== true);
     if (result.ruleset !== ruleset || result.cls !== className || result.level !== 1 || !result.hp || result.staleChoices || failed.length) {
       throw new Error(`${ruleset}/${className} 快速創角失敗: ${JSON.stringify(result)}`);
     }

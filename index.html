@@ -320,8 +320,10 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
 .ruleset-card:hover,.ruleset-card.selected{border-color:var(--gold);box-shadow:inset 4px 0 var(--gold)}
 .ruleset-card b{display:block;color:var(--parch);font-size:18px;margin-bottom:5px}.ruleset-card span{display:block;color:var(--muted);font-size:13px;line-height:1.6}
 .ruleset-badge{display:inline-block;border:1px solid var(--gold);color:var(--gold);padding:2px 8px;font:12px var(--sans);letter-spacing:.04em}
-.quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:18px 0}.quick-grid label{font-size:12px;color:var(--gold);letter-spacing:.08em}.quick-grid select,.quick-grid input{display:block;width:100%;margin-top:5px}.quick-summary{background:#f8f3e2;border:1px solid var(--line-soft);padding:12px 14px;font-size:13px;line-height:1.7}.quick-summary b{color:var(--blood)}
-@media(max-width:540px){.quick-grid{grid-template-columns:1fr}.quick-grid .wide{grid-column:auto}}
+.quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:18px 0}.quick-grid label{font-size:12px;color:var(--gold);letter-spacing:.08em}.quick-grid select,.quick-grid input{display:block;width:100%;margin-top:5px}.quick-summary{background:#f8f3e2;border:1px solid var(--line-soft);padding:14px;font-size:13px;line-height:1.65}.quick-summary b{color:var(--blood)}
+.quick-identity{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.quick-identity>div{border-left:3px solid var(--gold);padding:8px 10px;background:rgba(255,255,255,.45)}.quick-identity strong{display:block;color:var(--blood);font-size:12px;letter-spacing:.08em;margin-bottom:3px}.quick-feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.quick-feature{background:#fff;border:1px solid var(--line-soft);padding:9px 10px;min-width:0}.quick-feature b{display:block;margin-bottom:2px}.quick-feature span{display:block;color:var(--muted);font-size:12px;line-height:1.55}.quick-origin{margin-top:10px;padding-top:9px;border-top:1px solid var(--line-soft)}.quick-origin>div+div{margin-top:5px}.quick-note{margin-top:9px;color:var(--muted);font-size:11.5px}.quick-guide-title{font-size:18px;color:var(--blood);margin:2px 0 12px}.quick-guide-plan{counter-reset:quickstep;display:grid;gap:7px;margin:12px 0}.quick-guide-plan>div{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start}.quick-guide-plan>div:before{counter-increment:quickstep;content:counter(quickstep);display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--blood);color:white;font-weight:700;font-size:12px}.quick-guide-plan b{display:block;color:var(--gold)}
+.share-url{width:100%;font-size:12px;margin:10px 0}.share-summary{border-left:3px solid var(--gold);padding:9px 11px;background:#f8f3e2;line-height:1.65}.share-qr{display:grid;place-items:center;min-height:40px;margin:12px auto 2px}.share-qr svg{display:block;max-width:min(100%,340px);height:auto;background:#fff;padding:8px;border:1px solid var(--line-soft)}.share-warning{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:9px}
+@media(max-width:540px){.quick-grid,.quick-identity,.quick-feature-grid{grid-template-columns:1fr}.quick-grid .wide{grid-column:auto}}
 .save-toast.show{opacity:1}
 
 /* ══ 跑團狀態 ══ */
@@ -559,6 +561,7 @@ body.play-mode{overflow:hidden}.play-mode-view.open{display:block}
   <div class="hdr-acts">
     <button id="btnQuickBuild">快速創角</button>
     <button id="btnPlayMode">跑團模式</button>
+    <button id="btnShare">分享角色</button>
     <button id="btnRuleset">切換規則</button>
     <button id="btnRoster">角色庫</button>
   </div>
@@ -592,6 +595,35 @@ body.play-mode{overflow:hidden}.play-mode-view.open{display:block}
     </div>
     <div class="quick-summary" id="quickSummary"></div>
     <div class="modal-acts"><button id="quickCancel">取消</button><button class="primary" id="quickCreate">建立並檢視角色卡</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="quickGuideModal">
+  <div class="modal">
+    <button class="close-x" id="closeQuickGuide" aria-label="關閉">×</button>
+    <h3>你的第一場怎麼玩</h3>
+    <div id="quickGuideBody"></div>
+    <div class="modal-acts">
+      <button id="quickGuideEdit">回到步驟細修</button>
+      <button id="quickGuideSheet">查看完整角色卡</button>
+      <button class="primary" id="quickGuidePlay">開啟手機跑團卡</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="shareModal">
+  <div class="modal">
+    <button class="close-x" id="closeShare" aria-label="關閉">×</button>
+    <h3 id="shareTitle">分享角色快照</h3>
+    <div class="share-summary" id="shareSummary"></div>
+    <input class="share-url" id="shareUrl" readonly aria-label="角色分享連結">
+    <div class="share-actions">
+      <button class="primary" id="shareCopy">複製連結</button>
+      <button id="shareNative">使用手機分享</button>
+      <button id="shareImport" hidden>儲存副本並開啟跑團卡</button>
+    </div>
+    <div class="share-qr" id="shareQr"></div>
+    <div class="share-warning" id="shareWarning">快照包含角色建立資料與目前跑團計數，但不包含角色畫像。資料只在這段連結中，本工具不會把內容上傳到 QR 服務。</div>
   </div>
 </div>
 
@@ -747,6 +779,7 @@ body.play-mode{overflow:hidden}.play-mode-view.open{display:block}
     <p class="step-hint">這是你的完整角色卡。可在本頁下方直接調整護甲、盾牌、武器、金錢與其他裝備；外貌、性格及背景故事也會隨 PDF 與 JSON 匯出。</p>
     <div class="fs-toolbar">
       <button onclick="exportOfficialCharacterSheet()">下載 · 正式角色紙 PDF</button>
+      <button onclick="openShareModal()">分享連結／QR</button>
       <button onclick="window.print()">付梓 · 列印或存為 PDF</button>
       <button onclick="exportJSON()">匯出 JSON</button>
       <button data-go="6">← 返回法術頁</button>
@@ -849,9 +882,11 @@ body.play-mode{overflow:hidden}.play-mode-view.open{display:block}
 
 <script src="assets/vendor/pdf-lib.min.js"></script>
 <script src="assets/vendor/fontkit.umd.min.js"></script>
+<script src="assets/vendor/qrcode.js"></script>
 <script src="assets/data/rules-equipment.js"></script>
 <script src="assets/state/character-state.js"></script>
 <script src="assets/state/character-record.js"></script>
+<script src="assets/share/character-share.js"></script>
 <script>
 /* ============ 資料 ============ */
 if(!window.DND_DATA||!window.DND_STATE)throw new Error("角色規則資料載入失敗");
@@ -5192,6 +5227,59 @@ function autoSave(){
  clearTimeout(autoT);
  autoT=setTimeout(()=>saveCurrent(true),900);
 }
+/* ── 靜態分享快照：資料只存在 URL 雜湊，適用 GitHub Pages，Sites 後端可沿用同一格式。 ── */
+let incomingSharedSave=null;
+function shareLabel(save){
+ const name=save?.meta?.name?.trim()||"未命名冒險者",rules=save?.ruleset==="2014"?"5E 2014":"5R 2024",level=Math.max(1,+save?.level||1);
+ return `${name} · ${rules} · ${save?.cls||"未選職業"} ${level} 級`;
+}
+function closeShareModal(){$("shareModal").classList.remove("open")}
+function renderShareQr(url){
+ const box=$("shareQr");box.innerHTML="";
+ try{
+  const qr=qrcode(0,"L");qr.addData(url,"Byte");qr.make();box.innerHTML=qr.createSvgTag(4,4);
+  const svg=box.querySelector("svg");if(svg){svg.setAttribute("role","img");svg.setAttribute("aria-label","角色分享連結 QR Code")}
+  return true;
+ }catch(err){
+  const msg=document.createElement("div");msg.className="mhint";msg.textContent="這名角色的資料較多，分享連結仍可使用，但已超過 QR Code 容量。請改用複製連結或手機分享。";box.appendChild(msg);return false;
+ }
+}
+async function openShareModal(){
+ if(!S.cls){toast("請先建立角色再分享");return}
+ const btn=$("btnShare");btn.disabled=true;
+ try{
+  const url=await DND_CHARACTER_SHARE.makeUrl(serialize(),location.href);
+  incomingSharedSave=null;$("shareTitle").textContent="分享角色快照";$("shareSummary").textContent=shareLabel(serialize());$("shareUrl").value=url;$("shareImport").hidden=true;
+  $("shareWarning").textContent="快照包含角色建立資料與目前跑團計數，但不包含角色畫像。資料只在這段連結中，本工具不會把內容上傳到 QR 服務。";
+  renderShareQr(url);$("shareModal").classList.add("open");
+ }catch(err){console.error(err);toast("無法建立分享連結")}
+ finally{btn.disabled=false}
+}
+async function copyShareUrl(){
+ const input=$("shareUrl"),value=input.value;if(!value)return;
+ try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);else throw new Error("clipboard unavailable");toast("已複製角色分享連結")}
+ catch(_){input.focus();input.select();document.execCommand("copy");toast("已複製角色分享連結")}
+}
+async function nativeShareUrl(){
+ const url=$("shareUrl").value;if(!url)return;
+ if(!navigator.share){await copyShareUrl();return}
+ try{await navigator.share({title:"D&D 角色快照",text:$("shareSummary").textContent,url})}catch(err){if(err?.name!=="AbortError")toast("無法開啟系統分享")}
+}
+async function handleIncomingSnapshot(){
+ const token=DND_CHARACTER_SHARE.tokenFromHash();if(!token)return false;
+ try{
+  const save=await DND_CHARACTER_SHARE.decode(token);incomingSharedSave=save;
+  $("shareTitle").textContent="收到角色快照";$("shareSummary").textContent=shareLabel(save);$("shareUrl").value=location.href;$("shareImport").hidden=false;
+  $("shareWarning").textContent="先確認角色名稱、規則版本與職業。只有按下「儲存副本」後，這份角色才會加入你的角色庫；原本角色不會被覆蓋。";
+  renderShareQr(location.href);$("shareModal").classList.add("open");return true;
+ }catch(err){console.error(err);history.replaceState(null,"",location.pathname+location.search);toast("角色分享連結已損壞或無法識別");return false}
+}
+function importIncomingSnapshot(){
+ if(!incomingSharedSave)return;
+ const save=JSON.parse(JSON.stringify(incomingSharedSave));save.id=newId();save.ts=Date.now();
+ const result=deserialize(save);S.id=save.id;refreshAll();saveCurrent(true);incomingSharedSave=null;history.replaceState(null,"",location.pathname+location.search);closeShareModal();go(7);openPlayMode();
+ toast(result.warn.length?`已儲存分享副本（${result.warn.length} 項讀檔提示）`:"已儲存分享副本");
+}
 function loadChar(id){
  if(!storageAvailable())return;
  let o;try{o=CHARACTER_REPO.load(id)}catch(e){}
@@ -5244,6 +5332,40 @@ const QUICK_PRIORITY={
  "戰士":["str","con","dex","wis","cha","int"],"武僧":["dex","wis","con","str","int","cha"],"聖武士":["str","cha","con","wis","dex","int"],"遊俠":["dex","wis","con","str","int","cha"],
  "遊蕩者":["dex","con","int","wis","cha","str"],"術士":["cha","con","dex","wis","int","str"],"邪術師":["cha","con","dex","wis","int","str"],"法師":["int","con","dex","wis","cha","str"]
 };
+/* 本工具自行撰寫的入門摘要；只協助理解玩法，不取代規則原文。 */
+const QUICK_PLAY={
+ "野蠻人":{role:"近戰承傷與爆發",loop:"先進入狂暴，再貼近最危險的敵人，用高力量武器持續施壓。",tip:"狂暴能讓你更耐打，但仍要留意可用次數與維持條件。"},
+ "吟遊詩人":{role:"支援、交涉與靈活施法",loop:"先判斷隊友最需要哪種幫助：用激勵提高成功率，或以法術控制局面。",tip:"你不必只做傷害；讓關鍵隊友成功，往往就是最強的行動。"},
+ "牧師":{role:"治療、防護與神術支援",loop:"先維持隊伍安全；無人危急時再以戲法、武器或控制法術協助進攻。",tip:"治療通常用來避免隊友倒下，不必每受一點傷就立刻補滿。"},
+ "德魯伊":{role:"控場、探索與自然魔法",loop:"觀察地形和敵人站位，用法術改變戰場；需要時再治療或近身支援。",tip:"許多德魯伊法術需要專注，同一時間通常只能維持一道。"},
+ "戰士":{role:"穩定武器輸出與前線防守",loop:"選定最需要壓制的敵人，以最熟練的武器攻擊；受傷時用回氣續戰。",tip:"你的強項是可靠。站位、武器和保護脆弱隊友都比花俏招式重要。"},
+ "武僧":{role:"高速近戰與機動牽制",loop:"利用高移動力接近合適目標，連續攻擊後停在不容易被圍攻的位置。",tip:"無甲防禦需要不穿甲；敏捷與感知會同時影響你的生存力。"},
+ "聖武士":{role:"重裝前線、治療與神聖爆發",loop:"守在隊友與敵人之間，先用武器穩定作戰；有人危急時以聖療救援。",tip:"2014 與 2024 的一級施法進度不同，角色卡只會顯示當前版本可用的能力。"},
+ "遊俠":{role:"遠近皆宜的追獵與探索專家",loop:"先選好有利位置與主要獵物，再用弓或靈巧武器持續輸出。",tip:"把察覺、隱匿與求生用在戰鬥前，常能替全隊取得先機。"},
+ "遊蕩者":{role:"單次高傷、技能與潛入",loop:"每回合設法滿足偷襲條件，命中後用靈活走位避免被正面圍攻。",tip:"偷襲不一定需要躲藏；仔細查看版本規則列出的觸發條件。"},
+ "術士":{role:"少量法術的高效率施法者",loop:"用戲法處理普通回合，把有限法術留給能改變局勢的時機。",tip:"你會的法術不多，選擇時要讓攻擊、防禦與實用功能互相補足。"},
+ "邪術師":{role:"短休恢復的秘術攻擊者",loop:"以穩定戲法作為主力，把契約法術位用在最值得的回合。",tip:"契約法術位數量少但恢復方式特殊；跑團卡會替你追蹤使用量。"},
+ "法師":{role:"法術選擇最多的戰術施法者",loop:"先判斷敵人、距離和地形，再從已準備法術中挑最合適的解法。",tip:"法術書不等於已準備法術；出發前確認今天真正能直接施放哪些法術。"}
+};
+function quickSentence(text,max=96){
+ const plain=String(text||"").replace(/<[^>]*>/g,"").trim();
+ if(!plain)return "這是本職業在目前等級可用的核心能力。";
+ const first=plain.split(/[。；;]/)[0];return first.length>max?first.slice(0,max-1)+"…":first+(first.endsWith("。")?"":"。");
+}
+function quickLevelOneFeatures(cls,rules){
+ const p=(rules==="2014"?PROG_2014:PROG_2024)[cls?.n],raw=p?.f?.[1]||"";
+ return raw.split("、").map(n=>n.trim()).filter(Boolean).map(n=>{const key=n.split("(")[0].trim(),db=rules==="2014"?ALLDESC14:ALLDESC;return {n,d:quickSentence(db[key])}});
+}
+function quickExplainHTML(cls,bg,sp,rules){
+ if(!cls||!bg||!sp)return "";
+ const play=QUICK_PLAY[cls.n],features=quickLevelOneFeatures(cls,rules);
+ const origin=rules==="2024"&&bg.feat?`<div><b>背景專長 · ${bg.feat}</b>：${quickSentence(featDesc(bg.feat))}</div>`:`<div><b>背景特性 · ${bg.feature}</b>：${bg.desc}</div>`;
+ return `<div class="quick-identity"><div><strong>角色定位</strong>${play.role}</div><div><strong>第一回合思路</strong>${play.loop}</div></div>
+  <b>${rules==="2014"?"5E 2014":"5R 2024"} · ${sp.n} ${cls.n} · ${bg.n}</b>
+  <div class="quick-feature-grid">${features.map(x=>`<div class="quick-feature"><b>${x.n}</b><span>${x.d}</span></div>`).join("")}</div>
+  <div class="quick-origin">${origin}<div><b>${rules==="2014"?"種族":"物種"}特色</b>：${sp.traits.slice(0,3).join("；")}${sp.traits.length>3?"……":""}</div></div>
+  <div class="quick-note">玩法提醒：${play.tip}<br>以上為本工具自行撰寫的快速摘要；詳細判定仍以所選規則版本與 DM 裁定為準。</div>`;
+}
 function quickShuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function quickPriority(className,style){let p=[...(QUICK_PRIORITY[className]||Object.keys(ABN))];if(style==="durable"){p=p.filter(x=>x!=="con");p.splice(1,0,"con")}else if(style==="random")p=quickShuffle(p);return [...new Set(p)]}
 function renderQuickBuildOptions(){
@@ -5251,12 +5373,23 @@ function renderQuickBuildOptions(){
  const fill=(id,items)=>{const el=$(id),old=el.value;el.innerHTML=items.map(x=>`<option value="${x.n}">${x.n}</option>`).join("");if(items.some(x=>x.n===old))el.value=old};
  fill("quickClass",CLASSES);fill("quickBackground",bgs);fill("quickSpecies",sps);
  const cls=CLASSES.find(x=>x.n===$("quickClass").value),bg=bgs.find(x=>x.n===$("quickBackground").value),sp=sps.find(x=>x.n===$("quickSpecies").value);
- $("quickSummary").innerHTML=cls&&bg&&sp?`<b>${rules==="2014"?"5E 2014":"5R 2024"}</b> · ${sp.n} ${cls.n} · ${bg.n}<br>使用標準陣列與職業推薦配置；自動選擇合法的熟練、起始套裝${cls.caster?"與法術":""}。建立後可逐項更換。`:"";
+ $("quickSummary").innerHTML=cls&&bg&&sp?quickExplainHTML(cls,bg,sp,rules):"";
 }
 function openQuickBuild(){
  $("quickRuleset").value=S.ruleset;renderQuickBuildOptions();$("quickBuildModal").classList.add("open");
 }
 function closeQuickBuild(){$("quickBuildModal").classList.remove("open")}
+function quickGuideHTML(){
+ if(!S.cls||!S.bg||!S.sp)return "";
+ const play=QUICK_PLAY[S.cls.n],features=quickLevelOneFeatures(S.cls,S.ruleset),attacks=(S.gear.weapons||[]).slice(0,2).join("、")||"你最熟練的攻擊方式",spells=playModeSpellRows().slice(0,3).map(x=>x.n).join("、");
+ return `<div class="quick-guide-title">${S.sp.n} ${S.cls.n} · ${play.role}</div>
+  <div class="quick-guide-plan"><div><span><b>輪到你之前</b>先看目前生命、與敵人的距離，以及隊友是否需要救援。</span></div><div><span><b>採取主要行動</b>${play.loop}</span></div><div><span><b>做完後確認</b>記下消耗的能力、法術位或彈藥，並告訴 DM 你停在哪裡。</span></div></div>
+  <div class="quick-feature-grid">${features.map(x=>`<div class="quick-feature"><b>${x.n}</b><span>${x.d}</span></div>`).join("")}</div>
+  <div class="quick-origin"><div><b>常用攻擊</b>：${attacks}</div>${spells?`<div><b>先認識這些法術</b>：${spells}</div>`:""}<div><b>記住一件事</b>：${play.tip}</div></div>
+  <div class="quick-note">這張導覽只協助第一次操作；角色卡的「特性」與法術詳情才是完整參考。</div>`;
+}
+function openQuickGuide(){$("quickGuideBody").innerHTML=quickGuideHTML();$("quickGuideModal").classList.add("open")}
+function closeQuickGuide(){$("quickGuideModal").classList.remove("open")}
 function quickChooseSpecies(sp,priority){
  S.sp=sp;S.spChoices={};const usedAb=new Set(),usedSkills=new Set([...(S.bg?.sk||[]),...S.skills]);
  for(const c of sp.ch||[]){
@@ -5327,7 +5460,7 @@ async function createQuickCharacter(){
    S.cls=cls;S.level=1;S.classLevels={[cls.n]:1};const priority=quickPriority(cls.n,style);quickChooseBackground(bg);S.skills=new Set(cls.sk.filter(x=>!bg.sk.includes(x)).concat(cls.sk).slice(0,cls.skc));quickChooseSpecies(sp,priority);quickAssignAbilities(priority);
    if(rules==="2024"){const allowed=bg.ab,b2=priority.find(x=>allowed.includes(x))||allowed[0],b1=priority.find(x=>allowed.includes(x)&&x!==b2)||allowed.find(x=>x!==b2);S.bonusMode="21";S.bonus={b2,b1,c1:"",c2:"",c3:""};S.languages24=LANGUAGES_2024.slice(0,2)}
    quickFillClassChoices();quickFillGear();quickFillSpells();reconcileProgress();syncPlayHP();$("fName").value=name;
-   closeQuickBuild();refreshAll();go(7);renderFinal();saveCurrent(true);toast("已建立可繼續編輯的 1 級角色");
+   closeQuickBuild();refreshAll();go(7);renderFinal();saveCurrent(true);openQuickGuide();toast("已建立可繼續編輯的 1 級角色");
  }catch(err){console.error(err);alert("快速創角失敗："+err.message)}finally{btn.disabled=false;btn.textContent="建立並檢視角色卡"}
 }
 function refreshAll(){
@@ -6015,10 +6148,21 @@ window.onbeforeprint=()=>{if(!$("finalSheet").innerHTML)renderFinal()};
 $("btnRoster").onclick=openRoster;
 $("btnQuickBuild").onclick=openQuickBuild;
 $("btnPlayMode").onclick=openPlayMode;
+$("btnShare").onclick=openShareModal;
 $("closeQuickBuild").onclick=closeQuickBuild;
 $("quickCancel").onclick=closeQuickBuild;
 $("quickCreate").onclick=createQuickCharacter;
 $("quickBuildModal").onclick=e=>{if(e.target.id==="quickBuildModal")closeQuickBuild()};
+$("closeQuickGuide").onclick=closeQuickGuide;
+$("quickGuideModal").onclick=e=>{if(e.target.id==="quickGuideModal")closeQuickGuide()};
+$("quickGuideEdit").onclick=()=>{closeQuickGuide();go(0)};
+$("quickGuideSheet").onclick=()=>{closeQuickGuide();go(7)};
+$("quickGuidePlay").onclick=()=>{closeQuickGuide();openPlayMode()};
+$("closeShare").onclick=closeShareModal;
+$("shareModal").onclick=e=>{if(e.target.id==="shareModal")closeShareModal()};
+$("shareCopy").onclick=copyShareUrl;
+$("shareNative").onclick=nativeShareUrl;
+$("shareImport").onclick=importIncomingSnapshot;
 [$("quickRuleset"),$("quickClass"),$("quickBackground"),$("quickSpecies"),$("quickStyle")].forEach(el=>el.addEventListener("change",renderQuickBuildOptions));
 $("btnRuleset").onclick=()=>{$("rulesetModal").classList.add("open");syncRulesetUI()};
 $("closeRuleset").onclick=()=>$("rulesetModal").classList.remove("open");
@@ -6026,7 +6170,7 @@ $("rulesetModal").onclick=e=>{if(e.target.id==="rulesetModal")$("rulesetModal").
 document.querySelectorAll("[data-ruleset]").forEach(b=>b.onclick=()=>chooseRuleset(b.dataset.ruleset));
 $("closeRoster").onclick=closeRoster;
 $("rosterModal").onclick=e=>{if(e.target.id==="rosterModal")closeRoster()};
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeRoster();closeQuickBuild();if(document.body.classList.contains("play-mode"))$("pmClose")?.click()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeRoster();closeQuickBuild();closeQuickGuide();closeShareModal();if(document.body.classList.contains("play-mode"))$("pmClose")?.click()}});
 $("actNew").onclick=newChar;
 $("actSaveNow").onclick=()=>{if(saveCurrent())renderRoster();else toast("目前環境無法使用瀏覽器儲存")};
 $("actExportAll").onclick=exportAll;
@@ -6056,8 +6200,10 @@ window.addEventListener("beforeunload",()=>{if(S.cls&&storageAvailable())saveCur
  if(!restored)S.id=newId();
  syncRulesetUI();
  go(0);update();
+ const hasShare=!!DND_CHARACTER_SHARE.tokenFromHash();
  if(restored)setTimeout(()=>toast("已恢復上次編輯的角色"),400);
- else setTimeout(()=>$("rulesetModal").classList.add("open"),150);
+ else if(!hasShare)setTimeout(()=>$("rulesetModal").classList.add("open"),150);
+ if(hasShare)setTimeout(handleIncomingSnapshot,0);
  // 2014 法術資料已於資料庫宣告後立即開始載入；匯出流程會等待其完成。
 })();
 </script>
