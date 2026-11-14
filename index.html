@@ -352,6 +352,22 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
 .res-row button:disabled{opacity:.3;cursor:not-allowed}
 .res-row input.rmax{width:46px;padding:3px;text-align:center;font-size:12px}
 .ds-pips{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;align-items:center}
+
+/* ══ 手機跑團模式 ══ */
+.play-mode-view{position:fixed;inset:0;z-index:120;background:#ede4cc;color:var(--parch);overflow:auto;display:none;font-family:var(--sans)}
+body.play-mode{overflow:hidden}.play-mode-view.open{display:block}
+.pm-head{position:sticky;top:0;z-index:3;background:#2a2118;color:#f3ecd8;padding:10px max(12px,env(safe-area-inset-left));display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px #2a211844}
+.pm-head button,.pm-head select{min-height:40px;border:1px solid #bba97e;background:#342a20;color:#f3ecd8;padding:7px 10px;border-radius:4px}
+.pm-title{flex:1;min-width:0}.pm-title b{display:block;font:600 18px var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pm-title small{display:block;color:#cdbf9d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm-body{max-width:760px;margin:auto;padding:14px 12px calc(22px + env(safe-area-inset-bottom))}
+.pm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}.pm-stat{background:#f8f3e2;border:1px solid var(--line-soft);padding:9px 5px;text-align:center}.pm-stat b{display:block;font:700 22px var(--serif);color:var(--lapis)}.pm-stat small{color:var(--muted);font-size:10px}
+.pm-tabs{position:sticky;top:61px;z-index:2;display:flex;overflow-x:auto;background:#ede4cc;border-bottom:1px solid var(--line);margin:0 -12px 12px;padding:0 12px}.pm-tabs button{flex:1 0 auto;border:0;border-bottom:3px solid transparent;background:transparent;padding:11px 13px;color:var(--muted)}.pm-tabs button.active{color:var(--blood);border-color:var(--blood);font-weight:700}
+.pm-panel{display:none}.pm-panel.active{display:block}.pm-card{background:#f8f3e2;border:1px solid var(--line-soft);padding:12px;margin-bottom:10px}.pm-card h3{font:700 14px var(--serif);color:var(--blood);letter-spacing:.08em;border-bottom:1px solid var(--line-soft);padding-bottom:5px;margin-bottom:9px}
+.pm-hp{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.pm-hp .value{font:700 34px var(--serif);color:var(--lapis)}.pm-hp .value small{font-size:15px;color:var(--muted)}.pm-actions{display:flex;gap:6px;flex-wrap:wrap}.pm-actions input{width:68px;text-align:center}.pm-actions button,.pm-counter button{min-width:42px;min-height:38px;border:1px solid var(--line);background:#fffaf0;color:var(--parch);border-radius:4px}.pm-actions .danger{color:var(--danger)}
+.pm-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dotted var(--line-soft)}.pm-row:last-child{border:0}.pm-row small{display:block;color:var(--muted);font-size:11px}.pm-num{font-weight:700;color:var(--lapis);white-space:nowrap}.pm-counter{display:flex;align-items:center;gap:7px}.pm-counter b{min-width:44px;text-align:center}
+.pm-abilities{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.pm-ability{background:#fffaf0;border:1px solid var(--line-soft);padding:9px;text-align:center}.pm-ability b{display:block;font:700 22px var(--serif);color:var(--lapis)}.pm-ability span{font-size:11px;color:var(--muted)}
+.pm-list{list-style:none}.pm-list li{padding:7px 0;border-bottom:1px dotted var(--line-soft);line-height:1.55}.pm-list li:last-child{border:0}.pm-spell-name{font-weight:700;color:var(--parch)}.pm-empty{color:var(--muted);font-size:13px;padding:8px 0}
+@media(min-width:620px){.pm-stats{grid-template-columns:repeat(6,1fr)}.pm-abilities{grid-template-columns:repeat(6,1fr)}}
 .ds-pips button{width:25px;height:25px;border-radius:50%;border:1.5px solid var(--gold-dim);background:transparent;padding:0;position:relative}
 .ds-pips button.on::after{content:"";position:absolute;inset:3px;border-radius:50%;background:currentColor}
 .ds-pips button.on{color:var(--lapis);border-color:var(--lapis)}
@@ -539,6 +555,7 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
   <span class="ruleset-badge" id="rulesetBadge">5R · 2024</span>
   <span class="credit">製作 -Paradogs · QQ:407404166 · 禁止商用</span>
   <div class="hdr-acts">
+    <button id="btnPlayMode">跑團模式</button>
     <button id="btnRuleset">切換規則</button>
     <button id="btnRoster">角色庫</button>
   </div>
@@ -574,6 +591,7 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
   </div>
 </div>
 <div class="save-toast" id="toast"></div>
+<section class="play-mode-view" id="playModeView" aria-label="手機跑團模式"></section>
 
 <nav class="steps" id="stepNav"></nav>
 
@@ -4801,6 +4819,107 @@ function playPanel(){
  h+=`</div>`;
  return h;
 }
+
+let playModeTab="combat";
+function playModeSpellRows(){
+ const rows=[],seen=new Set(),add=(name,src="")=>{
+   if(!name||seen.has(name))return;seen.add(name);
+   const sp=spellDb().find(x=>x.n===name),meta=spellMetaDb()[name]||{};
+   rows.push({n:name,lv:sp?.lv??0,d:sp?.d||"",src,con:sp?.con,rit:sp?.rit,range:meta.range||""});
+ };
+ if(S.ruleset==="2014")castingProfiles2014().forEach(ci=>{
+   const st=spellStore2014(ci.name);
+   st.cantrips.forEach(n=>add(n,ci.name));
+   (ci.kind==="book"?st.prepared:st.known).forEach(n=>add(n,ci.name));
+   fixedSpells2014(ci.name).forEach(x=>add(x.n,x.src||ci.name));
+ });
+ else{
+   [...S.cantrips].forEach(n=>add(n,"戲法"));[...S.prepared].forEach(n=>add(n,"已準備"));
+   alwaysPrepared().forEach(x=>add(x.n,x.src||"恆定準備"));
+ }
+ grantedSpells().forEach(x=>add(x.n,x.src||"額外授予"));
+ return rows.sort((a,b)=>a.lv-b.lv||a.n.localeCompare(b.n,"zh"));
+}
+function playModeFeatureRows(){
+ const rows=[];
+ if(S.ruleset==="2014"){
+   ensureClassLevels();Object.entries(S.classLevels).forEach(([name,lv])=>{
+     const p=PROG_2014[name];if(!p)return;
+     Object.entries(p.f).filter(([n])=>+n<=lv).forEach(([n,v])=>rows.push({group:`${name} ${n}級`,html:featLine(v)}));
+     const si=name===S.cls?.n?S.sub:S.classSubs[name],sub=si!=null?p.subs[+si]:null;
+     if(sub)Object.entries(sub.f).filter(([n])=>+n<=lv).forEach(([n,v])=>rows.push({group:`${sub.n} ${n}級`,html:featLine(v)}));
+   });
+ }else{
+   const p=prog();if(p){Object.entries(p.f).filter(([n])=>+n<=S.level).forEach(([n,v])=>rows.push({group:`${S.cls.n} ${n}級`,html:featLine(v)}));
+   if(S.sub!=null){const sub=p.subs[S.sub];Object.entries(sub.f).filter(([n])=>+n<=S.level).forEach(([n,v])=>rows.push({group:`${sub.n} ${n}級`,html:featLine(v)}))}}
+ }
+ if(S.sp){S.sp.traits.forEach(v=>rows.push({group:S.ruleset==="2014"?"種族":"物種",html:`<b>${v}</b>${S.ruleset==="2014"&&RACE_TRAIT_DESC14[v]?`：${RACE_TRAIT_DESC14[v]}`:""}`}));const sr=S.ruleset==="2014"?SUBRACE14[S.spChoices.subrace]:null;if(sr)sr.traits.forEach(v=>rows.push({group:"亞種",html:`<b>${v}</b>${RACE_TRAIT_DESC14[v]?`：${RACE_TRAIT_DESC14[v]}`:""}`}))}
+ if(S.ruleset==="2024"&&S.bg)rows.push({group:"背景起源專長",html:`<b>${S.bg.feat}</b>：${featDesc(S.bg.feat)}`});
+ else if(S.bg)rows.push({group:"背景特性",html:`<b>${S.bg.feature}</b>`});
+ return rows;
+}
+function playModeSlotRows(){
+ const out=[],add=(key,label,max)=>out.push({key,label,max,used:S.slotsUsed[key]||0});
+ if(S.ruleset==="2014"){
+   (SLOTS_FULL[multiclassCasterLevel()]||[]).forEach((n,i)=>add("l"+(i+1),`${i+1} 環`,n));
+   const pact=castingProfiles2014().find(x=>x.name==="邪術師");if(pact){const [n,lv]=PACT[pact.lv]||[0,0];if(n)add("pact",`契約 ${lv} 環`,n)}
+ }else{
+   const ci=castInfo();if(ci){if(ci.type==="pact")add("pact",`契約 ${ci.pact.sl} 環`,ci.pact.n);else ci.slots.forEach((n,i)=>add("l"+(i+1),`${i+1} 環`,n))}
+ }
+ return out;
+}
+function renderPlayMode(){
+ const el=$("playModeView");if(!el||!document.body.classList.contains("play-mode")||!S.cls)return;
+ const maxHP=syncPlayHP(),pl=S.play;if(pl.hp==null)pl.hp=maxHP;
+ const name=$("fName").value.trim()||"未命名冒險者",ac=acInfo().total,spd=speedInfo()?.total||"—",inventory=DND_INVENTORY.build(),slots=playModeSlotRows();
+ const weapons=(S.gear.weapons||[]).map(n=>weaponLine(n)).filter(Boolean),resources=classResources(),hdPools=syncRemainingHitDice();
+ const skills=SKILLS.map(sk=>{const f=finalScore(sk.a),prof=allSkills().has(sk.n),exp=prof&&hasExpertise(sk.n);return {n:sk.n,a:ABN[sk.a],v:f==null?null:mod(f)+(prof?pb():0)+(exp?pb():0),prof,exp}});
+ const spellRows=playModeSpellRows(),featureRows=playModeFeatureRows();
+ const roster=getRoster();
+ el.innerHTML=`<div class="pm-head">
+   <button id="pmClose" aria-label="返回創角頁">←</button>
+   <div class="pm-title"><b>${name}</b><small>${S.ruleset==="2014"?"5E 2014":"5R 2024"} · ${classSummary()} · ${S.level}級${S.sp?` · ${S.sp.n}`:""}</small></div>
+   <select id="pmCharacter" aria-label="切換角色">${roster.map(x=>`<option value="${x.id}"${x.id===S.id?" selected":""}>${x.name}</option>`).join("")}</select>
+ </div><div class="pm-body">
+   <div class="pm-stats">
+    <div class="pm-stat"><b>${pl.hp}<small>/${maxHP}</small></b><small>目前生命</small></div><div class="pm-stat"><b>${pl.thp||0}</b><small>暫時生命</small></div>
+    <div class="pm-stat"><b>${ac}</b><small>AC</small></div><div class="pm-stat"><b>${fmt(mod(finalScore("dex")))}</b><small>先攻</small></div><div class="pm-stat"><b>${spd}</b><small>速度(尺)</small></div><div class="pm-stat"><b>${fmt(pb())}</b><small>熟練</small></div>
+   </div>
+   <div class="pm-tabs">${[["combat","戰鬥"],["abilities","能力"],["spells","法術"],["features","特性裝備"]].map(([k,v])=>`<button data-pm-tab="${k}" class="${playModeTab===k?"active":""}">${v}</button>`).join("")}</div>
+   <div class="pm-panel ${playModeTab==="combat"?"active":""}" data-pm-panel="combat">
+    <div class="pm-card"><h3>生命值</h3><div class="pm-hp"><div class="value">${pl.hp}<small> / ${maxHP}${pl.thp?` · +${pl.thp} 臨時`:""}</small></div><div class="pm-actions"><input id="pmHpAmt" type="number" min="0" inputmode="numeric" placeholder="數值"><button class="danger" data-pm-hp="dmg">受傷</button><button data-pm-hp="heal">治療</button><button data-pm-hp="temp">臨時</button><button data-pm-hp="full">長休回滿</button></div></div></div>
+    <div class="pm-card"><h3>死亡豁免、靈感與生命骰</h3><div class="ds-pips"><span>成功</span>${[1,2,3].map(i=>`<button data-pm-ds="s${i}" class="${pl.ds.s>=i?"on":""}"></button>`).join("")}<span>失敗</span>${[1,2,3].map(i=>`<button data-pm-ds="f${i}" class="fail ${pl.ds.f>=i?"on":""}"></button>`).join("")}<span>英雄靈感</span><button data-pm-insp="1" class="${pl.insp?"on":""}"></button></div>${Object.entries(hdPools).map(([n,p])=>`<div class="pm-row"><div>${Object.keys(hdPools).length>1?n+" ":""}生命骰 d${p.die}</div><div class="pm-counter"><button data-pm-hd="${n}" data-d="-1">−</button><b>${pl.hdByClass?.[n]||0} / ${p.max}</b><button data-pm-hd="${n}" data-d="1">＋</button></div><span></span></div>`).join("")}</div>
+    <div class="pm-card"><h3>攻擊</h3>${weapons.length?weapons.map(L=>`<div class="pm-row"><div><b>${L.w[1]}</b><small>${[L.mastery?`掌握 ${L.mastery}`:"",L.ammo?`射程 ${L.ammo}`:"",L.prof?"":"未熟練"].filter(Boolean).join(" · ")}</small></div><span class="pm-num">命中 ${fmt(L.atk)}</span><span class="pm-num">${L.dmg}</span></div>`).join(""):`<div class="pm-empty">尚未加入武器。</div>`}</div>
+    ${resources.length?`<div class="pm-card"><h3>職業資源</h3>${resources.map(r=>{const max=pl.resMax[r.k]!=null?pl.resMax[r.k]:r.max,used=pl.res[r.k]||0;return `<div class="pm-row"><div>${r.label}</div><div class="pm-counter"><button data-pm-res="${r.k}" data-d="1">−</button><b>${Math.max(0,max-used)} / ${max}</b><button data-pm-res="${r.k}" data-d="-1">＋</button></div><span></span></div>`}).join("")}</div>`:""}
+    ${slots.length?`<div class="pm-card"><h3>法術位</h3>${slots.map(s=>`<div class="pm-row"><div>${s.label}</div><div class="pm-counter"><button data-pm-slot="${s.key}" data-d="1">−</button><b>${Math.max(0,s.max-s.used)} / ${s.max}</b><button data-pm-slot="${s.key}" data-d="-1">＋</button></div><span></span></div>`).join("")}</div>`:""}
+   </div>
+   <div class="pm-panel ${playModeTab==="abilities"?"active":""}" data-pm-panel="abilities">
+    <div class="pm-card"><h3>屬性與豁免</h3><div class="pm-abilities">${ABILITIES.map(a=>`<div class="pm-ability"><span>${a.n}</span><b>${finalScore(a.k)}</b><span>調整 ${fmt(mod(finalScore(a.k)))} · 豁免 ${fmt(saveTotal(a.k))}</span></div>`).join("")}</div></div>
+    <div class="pm-card"><h3>技能</h3>${skills.map(x=>`<div class="pm-row"><div>${x.exp?"◆":x.prof?"●":"○"} ${x.n}<small>${x.a}${x.exp?" · 專精":x.prof?" · 熟練":""}</small></div><span class="pm-num">${fmt(x.v)}</span><span></span></div>`).join("")}</div>
+   </div>
+   <div class="pm-panel ${playModeTab==="spells"?"active":""}" data-pm-panel="spells">
+    <div class="pm-card"><h3>法術</h3>${spellRows.length?`<ul class="pm-list">${spellRows.map(x=>`<li><span class="pm-spell-name sref" data-sref="${x.n}">${x.n}</span> <small>${x.lv?x.lv+"環":"戲法"}${x.src?" · "+x.src:""}${x.con?" · 專注":""}${x.rit?" · 儀式":""}${x.range?" · "+x.range:""}</small>${x.d?`<div>${x.d}</div>`:""}</li>`).join("")}</ul>`:`<div class="pm-empty">這名角色目前沒有法術。</div>`}</div>
+   </div>
+   <div class="pm-panel ${playModeTab==="features"?"active":""}" data-pm-panel="features">
+    <div class="pm-card"><h3>特性與專長</h3>${featureRows.length?`<ul class="pm-list">${featureRows.map(x=>`<li><small>${x.group}</small>${x.html}</li>`).join("")}</ul>`:`<div class="pm-empty">尚無特性。</div>`}</div>
+    <div class="pm-card"><h3>熟練與裝備</h3><ul class="pm-list"><li><small>護甲</small>${inventory.proficiencies.armor}</li><li><small>武器</small>${inventory.proficiencies.weapons}</li><li><small>工具</small>${inventory.proficiencies.tools}</li><li><small>語言</small>${inventory.proficiencies.languages}</li><li><small>隨身裝備</small>${S.gear.items||"—"}</li><li><small>貨幣</small>${Object.entries(S.gear.gold||{}).map(([k,v])=>`${k.toUpperCase()} ${v||0}`).join(" · ")}</li></ul></div>
+   </div>
+ </div>`;
+ bindPlayMode();
+}
+function bindPlayMode(){
+ const el=$("playModeView");
+ $("pmClose").onclick=()=>{document.body.classList.remove("play-mode");el.classList.remove("open");saveCurrent(true)};
+ const sel=$("pmCharacter");if(sel)sel.onchange=()=>{loadChar(sel.value);setTimeout(renderPlayMode,0)};
+ el.querySelectorAll("[data-pm-tab]").forEach(b=>b.onclick=()=>{playModeTab=b.dataset.pmTab;renderPlayMode()});
+ el.querySelectorAll("[data-pm-hp]").forEach(b=>b.onclick=()=>{const amt=Math.max(0,parseInt($("pmHpAmt")?.value)||0),a=b.dataset.pmHp,pl=S.play,max=hpTotal();if(a==="full"){pl.hp=max;pl.thp=0;pl.ds={s:0,f:0}}else if(a==="heal")pl.hp=Math.min(max,(pl.hp||0)+amt);else if(a==="temp")pl.thp=Math.max(pl.thp||0,amt);else{let d=amt,absorb=Math.min(pl.thp||0,d);pl.thp-=absorb;d-=absorb;pl.hp=Math.max(0,(pl.hp||0)-d)}renderFinal();autoSave()});
+ el.querySelectorAll("[data-pm-ds]").forEach(b=>b.onclick=()=>{const t=b.dataset.pmDs[0],i=+b.dataset.pmDs[1];S.play.ds[t]=S.play.ds[t]===i?i-1:i;renderFinal();autoSave()});
+ el.querySelectorAll("[data-pm-insp]").forEach(b=>b.onclick=()=>{S.play.insp=!S.play.insp;renderFinal();autoSave()});
+ el.querySelectorAll("[data-pm-hd]").forEach(b=>b.onclick=()=>{DND_STATE.changeHitDie(S,CLASSES,b.dataset.pmHd,+b.dataset.d);renderFinal();autoSave()});
+ el.querySelectorAll("[data-pm-res]").forEach(b=>b.onclick=()=>{const k=b.dataset.pmRes,r=classResources().find(x=>x.k===k),max=S.play.resMax[k]!=null?S.play.resMax[k]:r?.max||0;S.play.res[k]=Math.min(max,Math.max(0,(S.play.res[k]||0)+ +b.dataset.d));renderFinal();autoSave()});
+ el.querySelectorAll("[data-pm-slot]").forEach(b=>b.onclick=()=>{const row=playModeSlotRows().find(x=>x.key===b.dataset.pmSlot);if(!row)return;S.slotsUsed[row.key]=Math.min(row.max,Math.max(0,(S.slotsUsed[row.key]||0)+ +b.dataset.d));renderFinal();autoSave()});
+}
+function openPlayMode(){if(!S.cls||hpTotal()==null){toast("請先完成職業與屬性值");return}saveCurrent(true);document.body.classList.add("play-mode");$("playModeView").classList.add("open");renderPlayMode()}
 /* 法術位計數器(角色卡頁) */
 function slotTracker(){
  const profiles14=S.ruleset==="2014"?castingProfiles2014():[],ci=S.ruleset==="2014"?null:castInfo();
@@ -5620,6 +5739,7 @@ function renderFinal(){
    S.slotsUsed[k]=Math.min(maxN,Math.max(0,(S.slotsUsed[k]||0)+d));
    renderFinal();autoSave();
  });
+ if(document.body.classList.contains("play-mode"))renderPlayMode();
 }
 
 /* ============ 實時角色卡 ============ */
@@ -5779,13 +5899,14 @@ window.onbeforeprint=()=>{if(!$("finalSheet").innerHTML)renderFinal()};
 ["fName","fPlayer","fAlign","fFaith","fGender","fAge"].forEach(id=>$(id).addEventListener("input",update));
 
 $("btnRoster").onclick=openRoster;
+$("btnPlayMode").onclick=openPlayMode;
 $("btnRuleset").onclick=()=>{$("rulesetModal").classList.add("open");syncRulesetUI()};
 $("closeRuleset").onclick=()=>$("rulesetModal").classList.remove("open");
 $("rulesetModal").onclick=e=>{if(e.target.id==="rulesetModal")$("rulesetModal").classList.remove("open")};
 document.querySelectorAll("[data-ruleset]").forEach(b=>b.onclick=()=>chooseRuleset(b.dataset.ruleset));
 $("closeRoster").onclick=closeRoster;
 $("rosterModal").onclick=e=>{if(e.target.id==="rosterModal")closeRoster()};
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeRoster()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeRoster();if(document.body.classList.contains("play-mode"))$("pmClose")?.click()}});
 $("actNew").onclick=newChar;
 $("actSaveNow").onclick=()=>{if(saveCurrent())renderRoster();else toast("目前環境無法使用瀏覽器儲存")};
 $("actExportAll").onclick=exportAll;
