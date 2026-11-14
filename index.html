@@ -812,6 +812,7 @@ header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
 <script src="assets/vendor/fontkit.umd.min.js"></script>
 <script src="assets/data/rules-equipment.js"></script>
 <script src="assets/state/character-state.js"></script>
+<script src="assets/state/character-record.js"></script>
 <script>
 /* ============ 資料 ============ */
 if(!window.DND_DATA||!window.DND_STATE)throw new Error("角色規則資料載入失敗");
@@ -4828,12 +4829,11 @@ function slotTracker(){
 
 /* ============ 存檔系統 ============ */
 const SAVE_VERSION=7;
-const SK={roster:"dnd5r:roster",char:id=>"dnd5r:char:"+id,cur:"dnd5r:current"};
+const CHARACTER_REPO=DND_CHARACTER_RECORD.createLocalRepository();
 let storeOK=null;
 function storageAvailable(){
  if(storeOK!==null)return storeOK;
- try{const t="dnd5r:__t";localStorage.setItem(t,"1");localStorage.removeItem(t);storeOK=true}
- catch(e){storeOK=false}
+ storeOK=CHARACTER_REPO.available();
  return storeOK;
 }
 function newId(){return "c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
@@ -5023,9 +5023,9 @@ function migrateReadable(o,warn){
 /* ── 角色庫 ── */
 function getRoster(){
  if(!storageAvailable())return [];
- try{return JSON.parse(localStorage.getItem(SK.roster)||"[]")}catch(e){return []}
+ return CHARACTER_REPO.getRoster();
 }
-function setRoster(r){try{localStorage.setItem(SK.roster,JSON.stringify(r))}catch(e){}}
+function setRoster(r){try{CHARACTER_REPO.setRoster(r)}catch(e){}}
 function rosterEntry(save){
  const p=PROG[save.cls];
  const subN=(save.sub!=null&&p&&p.subs[save.sub])?p.subs[save.sub].n:null;
@@ -5038,11 +5038,11 @@ function saveCurrent(silent){
  const save=serialize();
  const p=PROG[save.cls];
  if(save.sub!=null&&p&&p.subs[save.sub])save.subName=p.subs[save.sub].n;
- try{localStorage.setItem(SK.char(S.id),JSON.stringify(save))}catch(e){
+ try{CHARACTER_REPO.save(save)}catch(e){
    toast(S.portrait?"儲存空間不足 — 試試移除畫像或換更小的圖":"儲存空間不足,儲存失敗");return false}
  const r=getRoster().filter(x=>x.id!==S.id);
  r.unshift(rosterEntry(save));setRoster(r);
- try{localStorage.setItem(SK.cur,S.id)}catch(e){}
+ try{CHARACTER_REPO.setCurrentId(S.id)}catch(e){}
  if(!silent)toast("已儲存");
  return true;
 }
@@ -5054,11 +5054,11 @@ function autoSave(){
 }
 function loadChar(id){
  if(!storageAvailable())return;
- let o;try{o=JSON.parse(localStorage.getItem(SK.char(id))||"null")}catch(e){}
+ let o;try{o=CHARACTER_REPO.load(id)}catch(e){}
  if(!o){toast("讀取失敗");return}
  const r=deserialize(o);
  refreshAll();
- try{localStorage.setItem(SK.cur,S.id)}catch(e){}
+ try{CHARACTER_REPO.setCurrentId(S.id)}catch(e){}
  closeRoster();
  toast(r.warn.length?"已讀取(有 "+r.warn.length+" 處提示)":"已讀取:"+(o.meta?.name||"角色"));
  if(r.warn.length)setTimeout(()=>alert("讀檔提示:\n\n• "+r.warn.join("\n• ")),350);
@@ -5066,17 +5066,17 @@ function loadChar(id){
 function deleteChar(id){
  const e=getRoster().find(x=>x.id===id);
  if(!confirm(`確定刪除「${e?e.name:"該角色"}」嗎?此操作無法撤銷。`))return;
- try{localStorage.removeItem(SK.char(id))}catch(e){}
+ try{CHARACTER_REPO.remove(id)}catch(e){}
  setRoster(getRoster().filter(x=>x.id!==id));
  if(S.id===id)S.id=null;
  renderRoster();toast("已刪除");
 }
 function dupChar(id){
- let o;try{o=JSON.parse(localStorage.getItem(SK.char(id))||"null")}catch(e){}
+ let o;try{o=CHARACTER_REPO.load(id)}catch(e){}
  if(!o)return;
  o.id=newId();o.ts=Date.now();
  o.meta=Object.assign({},o.meta,{name:((o.meta&&o.meta.name)||"未命名冒險者")+" (副本)"});
- try{localStorage.setItem(SK.char(o.id),JSON.stringify(o))}catch(e){toast("儲存空間不足");return}
+ try{CHARACTER_REPO.save(o)}catch(e){toast("儲存空間不足");return}
  const r=getRoster();r.unshift(rosterEntry(o));setRoster(r);
  renderRoster();toast("已複製");
 }
@@ -5117,7 +5117,7 @@ function exportAll(){
  const r=getRoster();
  if(!r.length){toast("角色庫是空的");return}
  const chars=[];
- r.forEach(e=>{try{const o=JSON.parse(localStorage.getItem(SK.char(e.id)));if(o)chars.push(o)}catch(err){}});
+ r.forEach(e=>{try{const o=CHARACTER_REPO.load(e.id);if(o)chars.push(o)}catch(err){}});
  downloadBlob({type:"dnd5r-roster",v:SAVE_VERSION,ts:Date.now(),count:chars.length,chars},
    `角色庫備份-${chars.length}人-${new Date().toISOString().slice(0,10)}.json`);
  toast(`已匯出 ${chars.length} 個角色`);
@@ -5133,7 +5133,7 @@ function handleImport(text){
      if(!looksLikeSave(c))return;
      if(!c.id)c.id=newId();
      if(r.some(x=>x.id===c.id))c.id=newId();
-     try{localStorage.setItem(SK.char(c.id),JSON.stringify(c));r.unshift(rosterEntry(c));n++}catch(e){}
+     try{CHARACTER_REPO.save(c);r.unshift(rosterEntry(c));n++}catch(e){}
    });
    setRoster(r);renderRoster();
    toast(`已匯入 ${n} 個角色`);return;
@@ -5185,7 +5185,8 @@ function renderRoster(){
  list.querySelectorAll("[data-dup]").forEach(b=>b.onclick=()=>dupChar(b.dataset.dup));
  list.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteChar(b.dataset.del));
  list.querySelectorAll("[data-exp]").forEach(b=>b.onclick=()=>{
-   try{const o=JSON.parse(localStorage.getItem(SK.char(b.dataset.exp)));
+   try{const o=CHARACTER_REPO.load(b.dataset.exp);
+     if(!o)throw new Error("角色不存在");
      downloadBlob(o,`${(o.meta&&o.meta.name)||"角色"}-${o.ruleset==="2014"?"5E2014":"5R2024"}存檔.json`);toast("已匯出")}catch(e){toast("匯出失敗")}
  });
 }
@@ -5804,9 +5805,9 @@ window.addEventListener("beforeunload",()=>{if(S.cls&&storageAvailable())saveCur
  let restored=false;
  if(storageAvailable()){
    try{
-     const cur=localStorage.getItem(SK.cur);
+     const cur=CHARACTER_REPO.getCurrentId();
      if(cur){
-       const o=JSON.parse(localStorage.getItem(SK.char(cur))||"null");
+       const o=CHARACTER_REPO.load(cur);
        if(o){deserialize(o);restored=true}
      }
    }catch(e){}
