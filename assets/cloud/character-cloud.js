@@ -2,6 +2,9 @@
   "use strict";
   const API = "/api/dashboard";
   let dashboard = null;
+  let syncTimer = null;
+  let syncInFlight = false;
+  let syncAgain = false;
 
   async function request(method = "GET", body) {
     const response = await fetch(API, {
@@ -71,10 +74,50 @@
     if (!S?.cls) { toast("請先建立角色再同步"); return; }
     saveCurrent(true); status("正在同步角色…");
     try {
+      await syncCurrentRecord(); await refresh(); toast("角色已同步到雲端卷宗");
+    } catch (error) { status(error.message); }
+  }
+
+  async function syncCurrentRecord(options = {}) {
+    if (!S?.cls || syncInFlight) {
+      if (syncInFlight) syncAgain = true;
+      return null;
+    }
+    syncInFlight = true;
+    try {
+      saveCurrent(true);
       const record = CHARACTER_REPO.loadRecord(S.id) || DND_CHARACTER_RECORD.fromSave(serialize());
       const result = await request("POST", { action: "save-character", cloudId: currentCloudId(), record });
-      rememberCloudId(result.id); await refresh(); toast("角色已同步到雲端卷宗");
-    } catch (error) { status(error.message); }
+      rememberCloudId(result.id);
+      if (!options.silent) status(`雲端同步完成（修訂 ${result.revision || 1}）`);
+      return result;
+    } finally {
+      syncInFlight = false;
+      if (syncAgain) { syncAgain = false; scheduleCloudSync(250); }
+    }
+  }
+
+  function scheduleCloudSync(delay = 1200) {
+    if (!currentCloudId() || !S?.cls) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      syncCurrentRecord({ silent: true }).catch(error => status(`自動同步失敗：${error.message}`));
+    }, delay);
+  }
+
+  function installAutoSync() {
+    if (typeof window.autoSave !== "function" || window.autoSave.__cloudWrapped) return;
+    const localAutoSave = window.autoSave;
+    function cloudAwareAutoSave(...args) {
+      const result = localAutoSave.apply(this, args);
+      scheduleCloudSync();
+      return result;
+    }
+    cloudAwareAutoSave.__cloudWrapped = true;
+    window.autoSave = cloudAwareAutoSave;
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden" && currentCloudId()) scheduleCloudSync(0);
+    });
   }
 
   function loadFromCloud(id, options = {}) {
@@ -91,6 +134,7 @@
   }
 
   async function boot() {
+    installAutoSync();
     try {
       dashboard = await request(); ensureUi();
       const query = new URLSearchParams(location.search), cloudId = query.get("cloud");

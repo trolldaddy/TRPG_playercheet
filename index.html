@@ -887,6 +887,7 @@ body.play-mode{overflow:hidden}.play-mode-view.open{display:block}
 <script src="assets/state/character-state.js"></script>
 <script src="assets/state/character-record.js"></script>
 <script src="assets/share/character-share.js"></script>
+<script src="assets/state/character-inventory.js"></script>
 <script>
 /* ============ 資料 ============ */
 if(!window.DND_DATA||!window.DND_STATE)throw new Error("角色規則資料載入失敗");
@@ -6207,7 +6208,6 @@ window.addEventListener("beforeunload",()=>{if(S.cls&&storageAvailable())saveCur
  // 2014 法術資料已於資料庫宣告後立即開始載入；匯出流程會等待其完成。
 })();
 </script>
-<script src="assets/state/character-inventory.js"></script>
 <script src="assets/state/character-sheet-model.js"></script>
 <script src="assets/edition-data.js"></script>
 <script src="assets/character-sheet-export.js"></script>
