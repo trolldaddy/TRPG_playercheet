@@ -21,6 +21,15 @@
   function cloudKey() { return S?.id ? `dnd5r:cloud:${S.id}` : ""; }
   function currentCloudId() { try { return localStorage.getItem(cloudKey()) || ""; } catch (_) { return ""; } }
   function rememberCloudId(id) { try { if (cloudKey() && id) localStorage.setItem(cloudKey(), id); } catch (_) {} }
+  function localIdForCloud(cloudId) {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith("dnd5r:cloud:") && localStorage.getItem(key) === cloudId) return key.slice("dnd5r:cloud:".length);
+      }
+    } catch (_) {}
+    return "";
+  }
 
   function ensureUi() {
     if (document.getElementById("btnCloud")) return;
@@ -68,19 +77,28 @@
     } catch (error) { status(error.message); }
   }
 
-  function loadFromCloud(id) {
+  function loadFromCloud(id, options = {}) {
     const row = dashboard?.characters?.find(item => item.id === id); if (!row) return;
     try {
-      const record = { recordVersion: 1, id: newId(), ruleset: row.ruleset, revision: row.revision || 1,
+      const record = { recordVersion: 1, id: localIdForCloud(row.id) || newId(), ruleset: row.ruleset, revision: row.revision || 1,
         updatedAt: Date.now(), ownerId: null, campaignId: null, character: JSON.parse(row.characterJson),
         runtime: JSON.parse(row.runtimeJson || "{}"), sync: { dirty: false, baseRevision: row.revision || 1 } };
       const save = DND_CHARACTER_RECORD.toSave(record); deserialize(save); S.id = save.id; refreshAll(); saveCurrent(true);
-      rememberCloudId(row.id); close(); go(7); toast("已從雲端建立本機副本");
+      rememberCloudId(row.id); close(); go(7);
+      if (options.play) setTimeout(() => openPlayMode(), 0);
+      toast(options.play ? "已開啟雲端跑團卡" : "已從雲端更新本機角色");
     } catch (error) { status(`角色資料無法載入：${error.message}`); }
   }
 
   async function boot() {
-    try { dashboard = await request(); ensureUi(); }
+    try {
+      dashboard = await request(); ensureUi();
+      const query = new URLSearchParams(location.search), cloudId = query.get("cloud");
+      if (cloudId && dashboard.characters.some(item => item.id === cloudId)) {
+        loadFromCloud(cloudId, { play: query.get("mode") === "play" });
+        history.replaceState(null, "", location.pathname);
+      }
+    }
     catch (_) { /* GitHub Pages 與未登入環境維持純本機模式。 */ }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true }); else void boot();
