@@ -7,6 +7,7 @@
   let syncAgain = false;
   let cloudReadOnly = false;
   let readOnlyObserver = null;
+  const guestMode = new URLSearchParams(location.search).get("guest") === "1";
 
   async function request(method = "GET", body, url = API) {
     const response = await fetch(url, {
@@ -150,6 +151,19 @@
     }
   }
 
+  function showGuestNotice() {
+    document.body.classList.add("guest-mode");
+    if (document.getElementById("guestModeNotice")) return;
+    const notice = document.createElement("aside");
+    notice.id = "guestModeNotice";
+    notice.innerHTML = `<b>訪客模式</b><span>角色只儲存在這台裝置；請定期匯出 JSON 或 PDF 備份。</span><a href="/">登入雲端卷宗</a>`;
+    document.body.prepend(notice);
+    const style = document.createElement("style");
+    style.id = "guestModeStyle";
+    style.textContent = `#guestModeNotice{position:relative;z-index:30;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:#2d271e;color:#fff4d8;font-size:13px}#guestModeNotice b{color:#ffcf72}#guestModeNotice a{color:#fff;text-decoration:underline}.guest-mode #btnCloud{display:none!important}@media(max-width:600px){#guestModeNotice{align-items:flex-start;justify-content:flex-start}}`;
+    document.head.appendChild(style);
+  }
+
   function loadFromCloud(id, options = {}) {
     const row = options.row || dashboard?.characters?.find(item => item.id === id); if (!row) return;
     try {
@@ -165,6 +179,7 @@
   }
 
   async function boot() {
+    if (guestMode) { showGuestNotice(); return; }
     installAutoSync();
     try {
       dashboard = await request(); ensureUi();
