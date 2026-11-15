@@ -5,9 +5,11 @@
   let syncTimer = null;
   let syncInFlight = false;
   let syncAgain = false;
+  let cloudReadOnly = false;
+  let readOnlyObserver = null;
 
-  async function request(method = "GET", body) {
-    const response = await fetch(API, {
+  async function request(method = "GET", body, url = API) {
+    const response = await fetch(url, {
       method,
       cache: "no-store",
       credentials: "same-origin",
@@ -98,7 +100,7 @@
   }
 
   function scheduleCloudSync(delay = 1200) {
-    if (!currentCloudId() || !S?.cls) return;
+    if (cloudReadOnly || !currentCloudId() || !S?.cls) return;
     clearTimeout(syncTimer);
     syncTimer = setTimeout(() => {
       syncCurrentRecord({ silent: true }).catch(error => status(`自動同步失敗：${error.message}`));
@@ -120,16 +122,45 @@
     });
   }
 
+  function lockReadOnlyControls() {
+    if (!cloudReadOnly) return;
+    document.querySelectorAll("[data-pm-hp],[data-pm-ds],[data-pm-insp],[data-pm-hd],[data-pm-res],[data-pm-slot]").forEach(node => {
+      node.disabled = true;
+      node.setAttribute("aria-disabled", "true");
+    });
+    const back = document.getElementById("pmClose");
+    if (back) { back.title = "返回團務"; back.onclick = () => { location.href = "/"; }; }
+  }
+
+  function setCloudReadOnly(enabled) {
+    cloudReadOnly = Boolean(enabled);
+    document.body.classList.toggle("cloud-readonly", cloudReadOnly);
+    if (!document.getElementById("cloudReadOnlyStyle")) {
+      const style = document.createElement("style");
+      style.id = "cloudReadOnlyStyle";
+      style.textContent = `.cloud-readonly #pmCharacter{display:none}.cloud-readonly [data-pm-hp],.cloud-readonly [data-pm-ds],.cloud-readonly [data-pm-insp],.cloud-readonly [data-pm-hd],.cloud-readonly [data-pm-res],.cloud-readonly [data-pm-slot]{cursor:not-allowed;opacity:.55}`;
+      document.head.appendChild(style);
+    }
+    readOnlyObserver?.disconnect();
+    if (cloudReadOnly) {
+      readOnlyObserver = new MutationObserver(lockReadOnlyControls);
+      const view = document.getElementById("playModeView");
+      if (view) readOnlyObserver.observe(view, { childList: true, subtree: true });
+      lockReadOnlyControls();
+    }
+  }
+
   function loadFromCloud(id, options = {}) {
-    const row = dashboard?.characters?.find(item => item.id === id); if (!row) return;
+    const row = options.row || dashboard?.characters?.find(item => item.id === id); if (!row) return;
     try {
       const record = { recordVersion: 1, id: localIdForCloud(row.id) || newId(), ruleset: row.ruleset, revision: row.revision || 1,
         updatedAt: Date.now(), ownerId: null, campaignId: null, character: JSON.parse(row.characterJson),
         runtime: JSON.parse(row.runtimeJson || "{}"), sync: { dirty: false, baseRevision: row.revision || 1 } };
       const save = DND_CHARACTER_RECORD.toSave(record); deserialize(save); S.id = save.id; refreshAll(); saveCurrent(true);
-      rememberCloudId(row.id); close(); go(7);
-      if (options.play) setTimeout(() => openPlayMode(), 0);
-      toast(options.play ? "已開啟雲端跑團卡" : "已從雲端更新本機角色");
+      if (!options.readOnly) rememberCloudId(row.id);
+      setCloudReadOnly(options.readOnly); close(); go(7);
+      if (options.play) setTimeout(() => { openPlayMode(); lockReadOnlyControls(); }, 0);
+      toast(options.readOnly ? "DM 唯讀跑團卡" : options.play ? "已開啟雲端跑團卡" : "已從雲端更新本機角色");
     } catch (error) { status(`角色資料無法載入：${error.message}`); }
   }
 
@@ -138,8 +169,15 @@
     try {
       dashboard = await request(); ensureUi();
       const query = new URLSearchParams(location.search), cloudId = query.get("cloud");
-      if (cloudId && dashboard.characters.some(item => item.id === cloudId)) {
-        loadFromCloud(cloudId, { play: query.get("mode") === "play" });
+      if (cloudId) {
+        const readOnly = query.get("readonly") === "1";
+        let row = dashboard.characters.find(item => item.id === cloudId);
+        if (!row && readOnly) {
+          const detail = await request("GET", undefined, `${API}?characterId=${encodeURIComponent(cloudId)}`);
+          if (detail.access === "dm") row = detail.character;
+        }
+        if (!row) return;
+        loadFromCloud(cloudId, { row, readOnly, play: query.get("mode") === "play" });
         history.replaceState(null, "", location.pathname);
       }
     }
