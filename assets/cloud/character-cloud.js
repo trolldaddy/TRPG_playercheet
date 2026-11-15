@@ -24,6 +24,18 @@
     return data;
   }
 
+  function reportEvent(category, error, context = {}) {
+    const message = String(error?.message || error || "未知錯誤").slice(0, 300);
+    const throttleKey = `dnd5r:event:${category}`;
+    try {
+      const last = Number(sessionStorage.getItem(throttleKey) || 0);
+      if (Date.now() - last < 5 * 60 * 1000) return;
+      sessionStorage.setItem(throttleKey, String(Date.now()));
+    } catch (_) {}
+    fetch("/api/events", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ category, severity: "error", message, context }) }).catch(() => {});
+  }
+
   function cloudKey() { return S?.id ? `dnd5r:cloud:${S.id}` : ""; }
   function currentCloudId() { try { return localStorage.getItem(cloudKey()) || ""; } catch (_) { return ""; } }
   function rememberCloudId(id) { try { if (cloudKey() && id) localStorage.setItem(cloudKey(), id); } catch (_) {} }
@@ -78,7 +90,7 @@
     saveCurrent(true); status("正在同步角色…");
     try {
       await syncCurrentRecord(); await refresh(); toast("角色已同步到雲端卷宗");
-    } catch (error) { status(error.message); }
+    } catch (error) { status(error.message); reportEvent("manual_cloud_sync", error, { cloudId: Boolean(currentCloudId()) }); }
   }
 
   async function syncCurrentRecord(options = {}) {
@@ -104,7 +116,7 @@
     if (cloudReadOnly || !currentCloudId() || !S?.cls) return;
     clearTimeout(syncTimer);
     syncTimer = setTimeout(() => {
-      syncCurrentRecord({ silent: true }).catch(error => status(`自動同步失敗：${error.message}`));
+      syncCurrentRecord({ silent: true }).catch(error => { status(`自動同步失敗：${error.message}`); reportEvent("automatic_cloud_sync", error, { cloudId: Boolean(currentCloudId()) }); });
     }, delay);
   }
 
@@ -175,7 +187,7 @@
       setCloudReadOnly(options.readOnly); close(); go(7);
       if (options.play) setTimeout(() => { openPlayMode(); lockReadOnlyControls(); }, 0);
       toast(options.readOnly ? "DM 唯讀跑團卡" : options.play ? "已開啟雲端跑團卡" : "已從雲端更新本機角色");
-    } catch (error) { status(`角色資料無法載入：${error.message}`); }
+    } catch (error) { status(`角色資料無法載入：${error.message}`); reportEvent("cloud_character_load", error, { readOnly: Boolean(options.readOnly) }); }
   }
 
   async function boot() {
