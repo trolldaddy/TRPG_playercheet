@@ -41,11 +41,32 @@ const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
 
   await page.click('[data-pm-tab="spells"]');
   if (!(await page.locator('[data-pm-panel="spells"]').innerText()).includes("火焰箭")) throw new Error("手機法術頁沒有顯示已選法術");
+  await page.locator('[data-pm-panel="spells"] .sref[data-sref="火焰箭"]').click();
+  if (!(await page.locator("#spellTip").isVisible()) || !(await page.locator("#spellTip").innerText()).includes("射程")) throw new Error("手機點按法術名稱未顯示完整法術卡");
+  await page.locator('[data-pm-panel="spells"] .sref[data-sref="火焰箭"]').click();
   await page.click('[data-pm-tab="abilities"]');
   if (!(await page.locator('[data-pm-panel="abilities"]').innerText()).includes("奧秘")) throw new Error("手機能力頁沒有顯示技能");
 
   await page.click("#pmClose");
   if (await page.locator("body.play-mode").count()) throw new Error("無法離開手機跑團模式");
+  await page.evaluate(() => {
+    S.ruleset = "2024"; syncRulesetUI();
+    S.cls = CLASSES.find(x => x.n === "野蠻人"); S.level = 4; S.classLevels = { "野蠻人": 4 }; S.sub = 0;
+    S.sp = SPECIES_2024.find(x => x.n === "獸人"); S.bg = BACKGROUNDS_2024.find(x => x.n === "士兵");
+    S.base = { str: 15, dex: 14, con: 14, int: 8, wis: 12, cha: 10 }; S.bonus = { b2: "str", b1: "con", c1: "", c2: "", c3: "" };
+    reconcileProgress(); renderFinal(); playModeTab = "features"; openPlayMode();
+  });
+  await page.waitForSelector('[data-pm-panel="features"].active');
+  const featurePanel = page.locator('[data-pm-panel="features"]');
+  const featureText = await featurePanel.innerText();
+  if (!featureText.includes("魯莽攻擊") || !featureText.includes("獲得 2 點臨時生命值（2 次）")) throw new Error(`2024 特性摘要缺少實際數值: ${featureText.slice(0, 1000)}`);
+  await featurePanel.locator('.ft[aria-label="查看魯莽攻擊說明"]').click();
+  if (!(await page.locator("#featureTip").isVisible()) || !(await page.locator("#featureTip").innerText()).includes("優勢")) throw new Error("手機點按魯莽攻擊未顯示詳細效果");
+  await page.keyboard.press("Escape");
+  await featurePanel.locator('.ft[aria-label="查看腎上腺衝刺說明"]').click();
+  const adrenaline = await page.locator("#featureTip").innerText();
+  if (!/目前 2 點/.test(adrenaline) || !/目前 2 次/.test(adrenaline)) throw new Error(`腎上腺衝刺沒有換算當前數值: ${adrenaline}`);
+  await page.locator("#pmClose").click();
   await page.evaluate(() => {
     S.ruleset = "2014"; syncRulesetUI();
     S.cls = CLASSES.find(x => x.n === "戰士"); S.level = 2; S.classLevels = { "戰士": 2 }; S.sub = null; S.classSubs = {};

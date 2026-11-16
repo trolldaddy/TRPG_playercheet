@@ -211,7 +211,7 @@ aside.sheet{border-left:1px solid var(--line);padding:clamp(18px,2vw,26px) clamp
 .tl-f .dimf{color:var(--muted)}
 
 /* 旁註氣泡 */
-.ft{border-bottom:1px dotted var(--gold);cursor:help;position:relative}
+.ft{border-bottom:1px dotted var(--gold);cursor:help;position:relative;touch-action:manipulation}
 #featureTip{display:none;position:fixed;z-index:95;width:310px;max-width:calc(100vw - 16px);background:#2a2118;color:#ece3c9;border:1px solid var(--leaf);padding:9px 13px;font-size:12.5px;line-height:1.6;font-family:var(--sans);pointer-events:none;box-shadow:3px 3px 0 rgba(42,33,24,.18);white-space:normal;overflow-wrap:anywhere}
 .timeline .tl-row,.detail-box{overflow:visible}
 
@@ -247,7 +247,7 @@ textarea.fs-ta.tall{min-height:156px}
 
 header .credit{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;letter-spacing:.04em}
 /* ══ 法表速查 ══ */
-.sref{cursor:help;border-bottom:1px dotted var(--gold-dim)}
+.sref{cursor:help;border-bottom:1px dotted var(--gold-dim);touch-action:manipulation}
 .sref:hover{color:var(--gold)}
 #spellTip{display:none;position:fixed;z-index:90;width:340px;max-width:80vw;background:#2a2118;color:#ece3c9;border:1px solid var(--leaf);padding:11px 14px;font-size:12.5px;line-height:1.65;font-family:var(--sans);pointer-events:none;box-shadow:3px 3px 0 rgba(42,33,24,.22)}
 #spellTip .tip-t{font-weight:700;font-size:13.5px;margin-bottom:5px}
@@ -371,6 +371,7 @@ body.play-mode{overflow:hidden}.play-mode-view.open{display:block}
 .pm-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dotted var(--line-soft)}.pm-row:last-child{border:0}.pm-row small{display:block;color:var(--muted);font-size:11px}.pm-num{font-weight:700;color:var(--lapis);white-space:nowrap}.pm-counter{display:flex;align-items:center;gap:7px}.pm-counter b{min-width:44px;text-align:center}
 .pm-abilities{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.pm-ability{background:#fffaf0;border:1px solid var(--line-soft);padding:9px;text-align:center}.pm-ability b{display:block;font:700 22px var(--serif);color:var(--lapis)}.pm-ability span{font-size:11px;color:var(--muted)}
 .pm-list{list-style:none}.pm-list li{padding:7px 0;border-bottom:1px dotted var(--line-soft);line-height:1.55}.pm-list li:last-child{border:0}.pm-spell-name{font-weight:700;color:var(--parch)}.pm-empty{color:var(--muted);font-size:13px;padding:8px 0}
+.pm-feature-summary{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}.pm-list .ft,.pm-list .sref{font-weight:700;color:var(--parch)}
 @media(min-width:620px){.pm-stats{grid-template-columns:repeat(6,1fr)}.pm-abilities{grid-template-columns:repeat(6,1fr)}}
 .ds-pips button{width:25px;height:25px;border-radius:50%;border:1.5px solid var(--gold-dim);background:transparent;padding:0;position:relative}
 .ds-pips button.on::after{content:"";position:absolute;inset:3px;border-radius:50%;background:currentColor}
@@ -1879,9 +1880,24 @@ function featSpan(t){
  let label=t;
  if(key==="戰鬥風格"&&S.style)label=t+":"+S.style;
  const d=(S.ruleset==="2014"?ALLDESC14:ALLDESC)[key];
- return d?`<span class="ft" tabindex="0" data-tip="${d}">${label}</span>`:label;
+ return d?`<span class="ft" role="button" tabindex="0" aria-label="查看${key}說明" data-tip="${tipAttr(d)}">${label}</span>`:label;
 }
 function featLine(str){return str.split("、").map(featSpan).join("、")}
+function tipAttr(v){return String(v||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function speciesTraitInfo(raw){
+ const parts=String(raw||"").split(/[:：]/),name=parts.shift().trim(),base=parts.join("：").trim();
+ let summary=base,detail=base||name;
+ if(name==="腎上腺衝刺"){
+   const n=pb();summary=`附贈動作疾走；獲得 ${n} 點臨時生命值（${n} 次）`;
+   detail=`以附贈動作採取疾走動作，並獲得等同熟練加值的臨時生命值（目前 ${n} 點）。可使用等同熟練加值的次數（目前 ${n} 次），完成短休或長休後恢復全部次數。`;
+ }else if(name==="不屈堅韌")detail="當你受到傷害而使生命值降至 0、但未被直接殺死時，可以改為保留 1 點生命值。使用後須完成長休才能再次使用。";
+ else if(/^黑暗視覺/.test(name))detail=`你在黑暗中可視的距離為 ${name.replace("黑暗視覺","").trim()}；在該距離內，微光視為明亮、黑暗視為微光，但黑暗中只能辨識灰階。`;
+ return {name,summary,detail};
+}
+function speciesTraitSpan(raw){
+ const x=speciesTraitInfo(raw),tip=x.detail&&x.detail!==x.name?`<span class="ft" role="button" tabindex="0" aria-label="查看${x.name}說明" data-tip="${tipAttr(x.detail)}">${x.name}</span>`:`<b>${x.name}</b>`;
+ return `${tip}${x.summary?`<span class="pm-feature-summary">${x.summary}</span>`:""}`;
+}
 
 /* ============ 法術庫(格式:名稱|職業|標記 C專注 R儀式|簡述) ============ */
 const SPELL_RAW={
@@ -4926,8 +4942,8 @@ function playModeFeatureRows(){
    const p=prog();if(p){Object.entries(p.f).filter(([n])=>+n<=S.level).forEach(([n,v])=>rows.push({group:`${S.cls.n} ${n}級`,html:featLine(v)}));
    if(S.sub!=null){const sub=p.subs[S.sub];Object.entries(sub.f).filter(([n])=>+n<=S.level).forEach(([n,v])=>rows.push({group:`${sub.n} ${n}級`,html:featLine(v)}))}}
  }
- if(S.sp){S.sp.traits.forEach(v=>rows.push({group:S.ruleset==="2014"?"種族":"物種",html:`<b>${v}</b>${S.ruleset==="2014"&&RACE_TRAIT_DESC14[v]?`：${RACE_TRAIT_DESC14[v]}`:""}`}));const sr=S.ruleset==="2014"?SUBRACE14[S.spChoices.subrace]:null;if(sr)sr.traits.forEach(v=>rows.push({group:"亞種",html:`<b>${v}</b>${RACE_TRAIT_DESC14[v]?`：${RACE_TRAIT_DESC14[v]}`:""}`}))}
- if(S.ruleset==="2024"&&S.bg)rows.push({group:"背景起源專長",html:`<b>${S.bg.feat}</b>：${featDesc(S.bg.feat)}`});
+ if(S.sp){S.sp.traits.forEach(v=>rows.push({group:S.ruleset==="2014"?"種族":"物種",html:S.ruleset==="2014"?speciesTraitSpan(RACE_TRAIT_DESC14[v]?`${v}：${RACE_TRAIT_DESC14[v]}`:v):speciesTraitSpan(v)}));const sr=S.ruleset==="2014"?SUBRACE14[S.spChoices.subrace]:null;if(sr)sr.traits.forEach(v=>rows.push({group:"亞種",html:speciesTraitSpan(RACE_TRAIT_DESC14[v]?`${v}：${RACE_TRAIT_DESC14[v]}`:v)}))}
+ if(S.ruleset==="2024"&&S.bg){const d=featDesc(S.bg.feat);rows.push({group:"背景起源專長",html:`<span class="ft" role="button" tabindex="0" aria-label="查看${S.bg.feat}說明" data-tip="${tipAttr(d)}">${S.bg.feat}</span><span class="pm-feature-summary">${d}</span>`})}
  else if(S.bg)rows.push({group:"背景特性",html:`<b>${S.bg.feature}</b>`});
  return rows;
 }
@@ -5632,10 +5648,11 @@ function gotoSpell(name){
  srefPending=name;
  go(9);
 }
-/* 懸停在 .sref 法術名上時顯示浮動詳情卡(不攔截點選,避免與晶片選中衝突) */
+/* 法術詳情：桌面懸停，跑團模式可在觸控裝置上點按固定。 */
 const spellTip=document.createElement("div");
 spellTip.id="spellTip";
 document.body.appendChild(spellTip);
+let pinnedSpellRef=null;
 function spellTipHTML(name){
  const sp=spellDb().find(x=>x.n===name);if(!sp)return "";
  const m=spellMetaDb()[sp.n]||{};
@@ -5659,14 +5676,20 @@ document.addEventListener("mouseover",e=>{
  spellTip.style.left=x+"px";spellTip.style.top=y+"px";
 });
 document.addEventListener("mouseout",e=>{
- if(e.target.closest&&e.target.closest(".sref"))spellTip.style.display="none";
+ if(e.target.closest&&e.target.closest(".sref")&&!pinnedSpellRef)spellTip.style.display="none";
 });
-window.addEventListener("scroll",()=>{spellTip.style.display="none"},true);
+document.addEventListener("click",e=>{
+ const t=e.target.closest?.(".play-mode-view .sref[data-sref]");
+ if(t){e.preventDefault();e.stopPropagation();pinnedSpellRef=pinnedSpellRef===t?null:t;if(pinnedSpellRef){const html=spellTipHTML(t.dataset.sref);spellTip.innerHTML=html;spellTip.style.display="block";const r=t.getBoundingClientRect(),tw=spellTip.offsetWidth,th=spellTip.offsetHeight;spellTip.style.left=Math.min(Math.max(8,r.left),window.innerWidth-tw-8)+"px";spellTip.style.top=Math.max(8,r.top-th-9<8?r.bottom+9:r.top-th-9)+"px"}else spellTip.style.display="none";return}
+ if(pinnedSpellRef){pinnedSpellRef=null;spellTip.style.display="none"}
+});
+window.addEventListener("scroll",()=>{pinnedSpellRef=null;spellTip.style.display="none"},true);
 
 /* 通用旁註使用 fixed 浮層，避免被橫向捲動的表格裁切或推到表格外。 */
 const featureTip=document.createElement("div");
 featureTip.id="featureTip";
 document.body.appendChild(featureTip);
+let pinnedFeatureRef=null;
 function placeFeatureTip(target){
  featureTip.textContent=target.dataset.tip||"";
  if(!featureTip.textContent)return;
@@ -5677,10 +5700,16 @@ function placeFeatureTip(target){
  featureTip.style.left=x+"px";featureTip.style.top=Math.max(8,y)+"px";
 }
 document.addEventListener("mouseover",e=>{const t=e.target.closest?.(".ft[data-tip]");if(t)placeFeatureTip(t)});
-document.addEventListener("mouseout",e=>{if(e.target.closest?.(".ft[data-tip]"))featureTip.style.display="none"});
+document.addEventListener("mouseout",e=>{if(e.target.closest?.(".ft[data-tip]")&&!pinnedFeatureRef)featureTip.style.display="none"});
 document.addEventListener("focusin",e=>{const t=e.target.closest?.(".ft[data-tip]");if(t)placeFeatureTip(t)});
-document.addEventListener("focusout",e=>{if(e.target.closest?.(".ft[data-tip]"))featureTip.style.display="none"});
-window.addEventListener("scroll",()=>{featureTip.style.display="none"},true);
+document.addEventListener("focusout",e=>{if(e.target.closest?.(".ft[data-tip]")&&!pinnedFeatureRef)featureTip.style.display="none"});
+document.addEventListener("click",e=>{
+ const t=e.target.closest?.(".play-mode-view .ft[data-tip]");
+ if(t){e.preventDefault();e.stopPropagation();pinnedFeatureRef=pinnedFeatureRef===t?null:t;if(pinnedFeatureRef)placeFeatureTip(t);else featureTip.style.display="none";return}
+ if(pinnedFeatureRef){pinnedFeatureRef=null;featureTip.style.display="none"}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){pinnedFeatureRef=null;pinnedSpellRef=null;featureTip.style.display="none";spellTip.style.display="none"}});
+window.addEventListener("scroll",()=>{pinnedFeatureRef=null;featureTip.style.display="none"},true);
 
 /* ============ 速查頁 ============ */
 let refTab="weapon";
