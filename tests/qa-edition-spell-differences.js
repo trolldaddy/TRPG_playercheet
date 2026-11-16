@@ -24,6 +24,12 @@ const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
     check(SPELL_META["巫術箭"]?.range === "60尺", `2024 巫術箭射程錯誤：${SPELL_META["巫術箭"]?.range}`);
     check(augury14?.cls === "C", `2014 卜筮職業錯誤：${augury14?.cls}`);
     check(augury24?.cls === "CDW", `2024 卜筮術職業錯誤：${augury24?.cls}`);
+    check(Object.keys(SPELL_CLASS_2024).length === 64, `2024 職業法表差異應有 64 道，實際 ${Object.keys(SPELL_CLASS_2024).length}`);
+    for (const [name, classes] of Object.entries(SPELL_CLASS_2024)) {
+      const row = spell("2024", name);
+      check(!!row, `2024 缺少職業法表差異法術：${name}`);
+      check(row?.cls === classes, `2024 ${name} 職業錯誤：${row?.cls}，應為 ${classes}`);
+    }
     const item14 = await magicItemRulesDb("2014"), item24 = await magicItemRulesDb("2024");
     check(item14.spellReferenceEdition === "2014", "2014 魔法物品必須引用 2014 法術");
     check(item24.spellReferenceEdition === "2024", "2024 魔法物品必須引用 2024 法術");

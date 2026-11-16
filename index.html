@@ -2678,6 +2678,22 @@ Object.entries(SPELL_RAW).forEach(([lv,arr])=>arr.forEach(str=>{
  const [n,cls,flag,d]=str.split("|");
  SPELLS.push({n,lv:+lv,cls,con:flag.includes("C"),rit:flag.includes("R"),d});
 }));
+/* PHB 2024 與 PHB 2014 同名法術的基礎職業法表差異。此表只含八個基礎施法職業，不含子職業、專長或物種額外法術。 */
+const SPELL_CLASS_2024={
+ "訊息術":"BDSW","亡者低語":"CD",
+ "災禍術":"BCK","七彩噴射":"BSW","命令術":"BCP","偵測魔法":"BCDPRSKW","糾纏術":"DR","油膩術":"SW","防護善惡":"CDPKW","與動物交談":"BDKR","塔莎狂笑術":"BKW",
+ "援助術":"BCDPR","卜筮術":"CDW","長明火":"CDW","增強屬性":"BCDRSW","變巨/縮小":"BDSW","火焰刃":"DS","火焰球":"DSW","柔化屍體":"CPW","起風術":"DRSW","魔法武器":"PRSW","鏡影術":"BSKW","治療禱言":"CP","破音術":"BSW","守護聯結":"CP",
+ "活力靈光":"CDP","解除魔法":"BCDPRSKW","元素武器":"DPR","群體治癒真言":"BC","融身入石":"CDR","復活術":"CDPR","緩慢術":"BSW","死者交談":"BCW","吸血鬼之觸":"SKW",
+ "生命靈光":"CP","純淨靈光":"CP","占卜術":"CDW","支配野獸":"DRS","火焰護盾":"DSW","幻影殺手":"BW",
+ "比格比之手":"SW","力場法陣":"CPW","寒冰錐":"DSW","高等復原":"BCDPR","誤導術":"BKW","位面束縛":"BCDKW","拉瑞心靈連結":"BW","傳送法陣":"BSKW",
+ "召喚妖精":"D","石化術":"DSW","英雄宴":"BCD","群體暗示":"BSW","歐提路克冰凍法球":"SW","日光束":"CDSW",
+ "稜光噴射":"BSW","符記術":"BCDW",
+ "反感/好感":"BDW","半位面":"SKW","火焰雲":"DSW","日炎術":"CDSW",
+ "傳送門":"CSKW","威能真言:治療":"BC","稜光壁":"BW","怪誕術":"KW"
+};
+if(!SPELLS.some(sp=>sp.n==="歐提路克冰凍法球"))SPELLS.push({n:"歐提路克冰凍法球",lv:6,cls:"SW",con:false,rit:false,d:"在 300 尺內引爆 60 尺半徑寒冷能量，造成 10d6 寒冷傷害；亦可生成冰球延後爆發"});
+SPELLS.forEach(sp=>{if(SPELL_CLASS_2024[sp.n])sp.cls=SPELL_CLASS_2024[sp.n]});
+SPELL_META["歐提路克冰凍法球"]={school:"塑能",time:"動作",range:"300尺",comp:"言、姿、材",dur:"立即"};
 SPELLS.forEach((sp,i)=>{sp.edition="2024";sp.id=`2024-${String(i+1).padStart(3,"0")}`;const m=SPELL_META[sp.n]||(SPELL_META[sp.n]={});m.edition="2024";m.id=sp.id});
 const CLS_CODE={"吟遊詩人":"B","牧師":"C","德魯伊":"D","聖武士":"P","遊俠":"R","術士":"S","邪術師":"K","法師":"W"};
 /* 施法進度:戲法數量 / 已準備法術數量(索引=角色等級) */
