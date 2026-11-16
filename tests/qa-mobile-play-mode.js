@@ -46,6 +46,7 @@ const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
   await page.locator('[data-pm-panel="spells"] .sref[data-sref="火焰箭"]').click();
   await page.click('[data-pm-tab="abilities"]');
   if (!(await page.locator('[data-pm-panel="abilities"]').innerText()).includes("奧秘")) throw new Error("手機能力頁沒有顯示技能");
+  if (await page.locator('[data-pm-panel="abilities"] [data-skill-ability]').count() !== 6) throw new Error("技能沒有依六項屬性分組");
 
   await page.click("#pmClose");
   if (await page.locator("body.play-mode").count()) throw new Error("無法離開手機跑團模式");
@@ -54,6 +55,7 @@ const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
     S.cls = CLASSES.find(x => x.n === "野蠻人"); S.level = 4; S.classLevels = { "野蠻人": 4 }; S.sub = 0;
     S.sp = SPECIES_2024.find(x => x.n === "獸人"); S.bg = BACKGROUNDS_2024.find(x => x.n === "士兵");
     S.base = { str: 15, dex: 14, con: 14, int: 8, wis: 12, cha: 10 }; S.bonus = { b2: "str", b1: "con", c1: "", c2: "", c3: "" };
+    S.gear.weapons = ["手斧"]; S.mastery = new Set(["手斧"]);
     reconcileProgress(); renderFinal(); playModeTab = "features"; openPlayMode();
   });
   await page.waitForSelector('[data-pm-panel="features"].active');
@@ -68,6 +70,11 @@ const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
   await featurePanel.locator('.ft[aria-label="查看腎上腺衝刺說明"]').click();
   const adrenaline = await page.locator("#featureTip").innerText();
   if (!/目前 2 點/.test(adrenaline) || !/目前 2 次/.test(adrenaline)) throw new Error(`腎上腺衝刺沒有換算當前數值: ${adrenaline}`);
+  await page.click('[data-pm-tab="combat"]');
+  const mastery = page.locator('[data-pm-panel="combat"] .ft[aria-label*="掌握說明"]');
+  if (await mastery.count() !== 1) throw new Error("戰鬥頁武器沒有掌握效果快查");
+  await mastery.click();
+  if (!(await page.locator("#featureTip").isVisible()) || !(await page.locator("#featureTip").innerText()).trim()) throw new Error("點按武器掌握沒有顯示效果");
   await page.locator("#pmClose").click();
   await page.evaluate(() => {
     S.ruleset = "2014"; syncRulesetUI();
