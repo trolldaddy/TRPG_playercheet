@@ -62,6 +62,8 @@ const url = process.env.QA_URL || "http://127.0.0.1:18766/index.html";
   if (!featureText.includes("魯莽攻擊") || !featureText.includes("獲得 2 點臨時生命值（2 次）")) throw new Error(`2024 特性摘要缺少實際數值: ${featureText.slice(0, 1000)}`);
   await featurePanel.locator('.ft[aria-label="查看魯莽攻擊說明"]').click();
   if (!(await page.locator("#featureTip").isVisible()) || !(await page.locator("#featureTip").innerText()).includes("優勢")) throw new Error("手機點按魯莽攻擊未顯示詳細效果");
+  const featureLayers = await page.evaluate(() => ({ play: +getComputedStyle(document.getElementById("playModeView")).zIndex, tip: +getComputedStyle(document.getElementById("featureTip")).zIndex }));
+  if (featureLayers.tip <= featureLayers.play) throw new Error(`特性提示被跑團模式遮住: ${JSON.stringify(featureLayers)}`);
   await page.keyboard.press("Escape");
   await featurePanel.locator('.ft[aria-label="查看腎上腺衝刺說明"]').click();
   const adrenaline = await page.locator("#featureTip").innerText();
